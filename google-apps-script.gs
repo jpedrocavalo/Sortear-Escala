@@ -66,12 +66,20 @@ function formatDate_(isoDate) {
 }
 
 function buildCellValue_(raw, weekIndex, dayKey) {
-  var categories = ["C1", "C2", "PC"];
+  var categories = dayKey === "domingo1"
+    ? ["C1", "C2", "PC", "Superv"]
+    : ["C1", "C2", "PC"];
+  var outputLabels = {
+    C1: "C1",
+    C2: "C2",
+    PC: "PC",
+    Superv: "Supervisor"
+  };
 
   return categories
     .map(function(category) {
       var value = raw["names:" + weekIndex + ":" + dayKey + ":" + category] || "";
-      return value ? value + " (" + category + ")" : "";
+      return value ? value + " (" + outputLabels[category] + ")" : "";
     })
     .filter(function(line) {
       return line !== "";
@@ -85,9 +93,10 @@ function buildRichCellValue_(raw, weekIndex, dayKey) {
   var boldStyle = SpreadsheetApp.newTextStyle().setBold(true).build();
   var lines = text ? text.split("\n") : [];
   var cursor = 0;
+  var boldMarker = dayKey === "domingo1" ? "(Supervisor)" : "(PC)";
 
   lines.forEach(function(line) {
-    if (line.indexOf("(PC)") !== -1) {
+    if (line.indexOf(boldMarker) !== -1) {
       builder.setTextStyle(cursor, cursor + line.length, boldStyle);
     }
 
