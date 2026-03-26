@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sorteio por Categoria</title>
+  <style>
+    :root {
+      --bg: #eef2f7;
+      --panel: #ffffff;
+      --line: #d6deea;
+      --ink: #19324d;
+      --accent: #0d9488;
+      --accent-dark: #0f766e;
+      --warn: #b91c1c;
+      --soft: #f7fafc;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background:
+        radial-gradient(circle at top left, #dff7f4, transparent 28%),
+        radial-gradient(circle at bottom right, #dce8ff, transparent 24%),
+        var(--bg);
+      color: var(--ink);
+      padding: 32px 16px;
+    }
+
+    .app {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      gap: 24px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 18px 50px rgba(25, 50, 77, 0.08);
+      padding: 24px;
+    }
+
+    h1, h2 {
+      margin-top: 0;
+    }
+
+    .intro {
+      display: grid;
+      gap: 8px;
+    }
+
+    .intro p,
+    .hint,
+    .status {
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .hint {
+      color: #4b647f;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .primary:hover {
+      background: var(--accent-dark);
+    }
+
+    .secondary {
+      background: #e7eef7;
+      color: var(--ink);
+    }
+
+    .link-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      background: #19324d;
+      color: #fff;
+      transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+
+    .link-button:hover {
+      transform: translateY(-1px);
+      background: #12263b;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .category {
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .category-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .category h3 {
+      margin: 0;
+    }
+
+    .counter {
+      font-size: 13px;
+      color: #5f748d;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 340px;
+      resize: vertical;
+      border: 1px solid #c7d2e0;
+      border-radius: 12px;
+      padding: 12px;
+      font: inherit;
+      background: #fff;
+    }
+
+    .output-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .result-block {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    }
+
+    .result-block h3 {
+      margin-top: 0;
+      margin-bottom: 14px;
+    }
+
+    .result-columns {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .result-category {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .result-category h4 {
+      margin: 0 0 10px 0;
+      font-size: 15px;
+    }
+
+    .result-category ol {
+      margin: 0;
+      padding-left: 20px;
+      line-height: 1.7;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .summary-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    }
+
+    .summary-card h3 {
+      margin-top: 0;
+      margin-bottom: 14px;
+    }
+
+    .summary-empty {
+      margin: 0;
+      color: #5f748d;
+    }
+
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .summary-table th,
+    .summary-table td {
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+    }
+
+    .summary-table th:last-child,
+    .summary-table td:last-child {
+      text-align: right;
+      width: 80px;
+    }
+
+    .status {
+      min-height: 24px;
+      font-weight: 600;
+    }
+
+    .status.error {
+      color: var(--warn);
+    }
+
+    .status.success {
+      color: var(--accent-dark);
+    }
+
+    @media (max-width: 900px) {
+      .grid,
+      .output-grid,
+      .summary-grid,
+      .result-columns {
+        grid-template-columns: 1fr;
+      }
+
+      textarea {
+        min-height: 220px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="card intro">
+      <h1>Sorteio por categoria</h1>
+      <p>Os nomes sao carregados diretamente do codigo. Basta abrir o arquivo e clicar em gerar sorteio.</p>
+      <p class="hint">Edite a lista no arquivo <strong>nomes-config.js</strong>, cadastrando cada pessoa com suas categorias e regras. O sorteio preenche as 5 semanas do calendario: 5 quintas para C1/C2/PC, 12 domingos para C1/C2/PC e 4 ZS07 para Superv. A Semana 5 fica so com quinta-feira. Cada nome precisa aparecer pelo menos 2 vezes no total do ciclo, somando todas as categorias em que ele existir, nao pode repetir dentro da mesma semana, e todo nome de PC precisa aparecer ao menos uma vez em PC.</p>
+      <div class="controls">
+        <button class="primary" id="sortearBtn" type="button">Gerar sorteio</button>
+        <button class="secondary" id="limparBtn" type="button">Limpar resultados</button>
+        <a class="link-button" href="./Calendario.html">Abrir calendario</a>
+      </div>
+      <p class="status" id="status"></p>
+    </section>
+
+    <section class="card">
+      <h2>Entrada dos nomes</h2>
+      <div class="grid">
+        <article class="category">
+          <div class="category-header">
+            <h3>C1</h3>
+            <span class="counter" id="count-c1">0 nomes</span>
+          </div>
+          <textarea id="c1" readonly></textarea>
+        </article>
+
+        <article class="category">
+          <div class="category-header">
+            <h3>C2</h3>
+            <span class="counter" id="count-c2">0 nomes</span>
+          </div>
+          <textarea id="c2" readonly></textarea>
+        </article>
+
+        <article class="category">
+          <div class="category-header">
+            <h3>PC</h3>
+            <span class="counter" id="count-pc">0 nomes</span>
+          </div>
+          <textarea id="pc" readonly></textarea>
+        </article>
+
+        <article class="category">
+          <div class="category-header">
+            <h3>Superv</h3>
+            <span class="counter" id="count-superv">0 nomes</span>
+          </div>
+          <textarea id="superv" readonly></textarea>
+        </article>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Resultados do sorteio</h2>
+      <div class="output-grid">
+        <article class="result-block">
+          <h3>Quinta-feira</h3>
+          <div class="result-columns" id="quinta-output"></div>
+        </article>
+
+        <article class="result-block">
+          <h3>Domingo</h3>
+          <div class="result-columns" id="domingo-output"></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Contagem dos nomes sorteados</h2>
+      <div class="summary-grid">
+        <article class="summary-card">
+          <h3>Quinta-feira</h3>
+          <div id="quinta-summary"></div>
+        </article>
+
+        <article class="summary-card">
+          <h3>Domingo</h3>
+          <div id="domingo-summary"></div>
+        </article>
+
+        <article class="summary-card">
+          <h3>Total geral</h3>
+          <div id="total-summary"></div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script src="./nomes-config.js"></script>
+  <script>
+    const BASE_CATEGORY_IDS = ["c1", "c2", "pc"];
+    const EXTRA_SUNDAY1_CATEGORY_IDS = ["superv"];
+    const CATEGORY_IDS = [...BASE_CATEGORY_IDS, ...EXTRA_SUNDAY1_CATEGORY_IDS];
+    const DAY_RULES = {
+      quinta: 5,
+      domingo: 12,
+      domingo1Superv: 4,
+    };
+    const DRAW_STORAGE_KEY = "sorteio-resultado-v1";
+    const CALENDAR_STORAGE_KEY = "calendario-escala-v1";
+    const SOURCE_NAMES_STORAGE_KEY = "sorteio-categorias-v1";
+    const CALENDAR_WEEK_COUNT = 5;
+    const CALENDAR_CATEGORY_LABELS = ["C1", "C2", "PC", "Superv"];
+    const CALENDAR_DAY_KEYS = ["quinta", "domingo1", "domingo2", "domingo3"];
+
+    const PEOPLE_CONFIG = window.PEOPLE_CONFIG || {};
+
+    const labels = {
+      c1: "C1",
+      c2: "C2",
+      pc: "PC",
+      superv: "Superv",
+    };
+
+    function getPersonRules(name) {
+      return PEOPLE_CONFIG[name]?.rules || {};
+    }
+
+    function normalizeBlockedDay(day) {
+      const value = String(day || "").trim().toLowerCase();
+      const aliases = {
+        quinta: "quinta",
+        domingo1: "domingo1",
+        domingo2: "domingo2",
+        domingo3: "domingo3",
+        zs07: "domingo1",
+        zs10: "domingo2",
+        zs16: "domingo3",
+      };
+
+      return aliases[value] || value;
+    }
+
+    function isBlockedForWeek(name, weekIndex) {
+      const blockedWeeks = getPersonRules(name).blockedWeeks;
+      return Array.isArray(blockedWeeks) && blockedWeeks.includes(weekIndex + 1);
+    }
+
+    function isBlockedForDay(name, dayKey) {
+      const blockedDays = getPersonRules(name).blockedDays;
+      if (!Array.isArray(blockedDays)) {
+        return false;
+      }
+
+      const normalizedDayKey = normalizeBlockedDay(dayKey);
+      return blockedDays.some((day) => normalizeBlockedDay(day) === normalizedDayKey);
+    }
+
+    function isBlockedForSlot(name, slot) {
+      return isBlockedForWeek(name, slot.weekIndex) || isBlockedForDay(name, slot.dayKey);
+    }
+
+    function buildCategoriesFromPeopleConfig() {
+      const categories = { c1: [], c2: [], pc: [], superv: [] };
+
+      Object.entries(PEOPLE_CONFIG).forEach(([name, config]) => {
+        const categoriesForPerson = Array.isArray(config?.categories) ? config.categories : [];
+        categoriesForPerson.forEach((categoryId) => {
+          if (categories[categoryId] && !categories[categoryId].includes(name)) {
+            categories[categoryId].push(name);
+          }
+        });
+      });
+
+      return categories;
+    }
+
+    function loadJsonStorage(key) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function saveJsonStorage(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function readNames(textareaId) {
+      const value = document.getElementById(textareaId).value;
+      const uniqueNames = [];
+      const seen = new Set();
+
+      value
+        .split(/\r?\n/)
+        .map((name) => name.trim())
+        .filter(Boolean)
+        .forEach((name) => {
+          const normalized = name.toLocaleLowerCase("pt-BR");
+          if (!seen.has(normalized)) {
+            seen.add(normalized);
+            uniqueNames.push(name);
+          }
+        });
+
+      return uniqueNames;
+    }
+
+    function populatePredefinedNames() {
+      const categoriesFromConfig = buildCategoriesFromPeopleConfig();
+      CATEGORY_IDS.forEach((categoryId) => {
+        const textarea = document.getElementById(categoryId);
+        textarea.value = (categoriesFromConfig[categoryId] || []).join("\n");
+      });
+    }
+
+    function shuffle(list) {
+      const clone = [...list];
+      for (let i = clone.length - 1; i > 0; i -= 1) {
+        const randomIndex = Math.floor(Math.random() * (i + 1));
+        [clone[i], clone[randomIndex]] = [clone[randomIndex], clone[i]];
+      }
+      return clone;
+    }
+
+    function createCategoryResult(title, names) {
+      const article = document.createElement("article");
+      article.className = "result-category";
+
+      const heading = document.createElement("h4");
+      heading.textContent = title;
+      article.appendChild(heading);
+
+      const list = document.createElement("ol");
+      names.forEach((name) => {
+        const item = document.createElement("li");
+        item.textContent = name;
+        list.appendChild(item);
+      });
+
+      article.appendChild(list);
+      return article;
+    }
+
+    function renderDay(containerId, results, categoryIds) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = "";
+
+      categoryIds.forEach((categoryId) => {
+        container.appendChild(
+          createCategoryResult(labels[categoryId], results[categoryId] || [])
+        );
+      });
+    }
+
+    function countOccurrences(resultsByCategory) {
+      const counts = new Map();
+
+      CATEGORY_IDS.forEach((categoryId) => {
+        (resultsByCategory[categoryId] || []).forEach((name) => {
+          counts.set(name, (counts.get(name) || 0) + 1);
+        });
+      });
+
+      return counts;
+    }
+
+    function mergeCounts(...maps) {
+      const merged = new Map();
+
+      maps.forEach((counts) => {
+        counts.forEach((amount, name) => {
+          merged.set(name, (merged.get(name) || 0) + amount);
+        });
+      });
+
+      return merged;
+    }
+
+    function sortCounts(counts) {
+      return [...counts.entries()].sort((left, right) => {
+        if (right[1] !== left[1]) {
+          return right[1] - left[1];
+        }
+
+        return left[0].localeCompare(right[0], "pt-BR");
+      });
+    }
+
+    function renderSummary(containerId, counts) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = "";
+
+      const entries = sortCounts(counts);
+      if (entries.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "summary-empty";
+        empty.textContent = "Nenhum sorteio gerado ainda.";
+        container.appendChild(empty);
+        return;
+      }
+
+      const table = document.createElement("table");
+      table.className = "summary-table";
+
+      const thead = document.createElement("thead");
+      thead.innerHTML = "<tr><th>Nome</th><th>Vezes</th></tr>";
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      entries.forEach(([name, amount]) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${name}</td><td>${amount}</td>`;
+        tbody.appendChild(row);
+      });
+      table.appendChild(tbody);
+
+      container.appendChild(table);
+    }
+
+    function countNamesFromValue(value) {
+      return value
+        .split(/\r?\n/)
+        .map((name) => name.trim())
+        .filter(Boolean);
+    }
+
+    function getCalendarSummaryCounts() {
+      const calendarData = loadJsonStorage(CALENDAR_STORAGE_KEY) || {};
+      const quintaCounts = new Map();
+      const domingoCounts = new Map();
+
+      Object.entries(calendarData).forEach(([key, value]) => {
+        if (!key.startsWith("names:")) {
+          return;
+        }
+
+        const [, week, day] = key.split(":");
+        if (week === "4" && day.startsWith("domingo")) {
+          return;
+        }
+        const targetMap = day === "quinta"
+          ? quintaCounts
+          : day.startsWith("domingo")
+            ? domingoCounts
+            : null;
+
+        if (!targetMap) {
+          return;
+        }
+
+        countNamesFromValue(value).forEach((name) => {
+          targetMap.set(name, (targetMap.get(name) || 0) + 1);
+        });
+      });
+
+      return {
+        quinta: quintaCounts,
+        domingo: domingoCounts,
+        total: mergeCounts(quintaCounts, domingoCounts),
+      };
+    }
+
+    function renderCalendarSummaries() {
+      const counts = getCalendarSummaryCounts();
+      renderSummary("quinta-summary", counts.quinta);
+      renderSummary("domingo-summary", counts.domingo);
+      renderSummary("total-summary", counts.total);
+    }
+
+    function renderStoredDraw(storedDraw) {
+      if (!storedDraw || !storedDraw.results) {
+        renderCalendarSummaries();
+        return;
+      }
+
+      renderDay("quinta-output", storedDraw.results.quinta, BASE_CATEGORY_IDS);
+      renderDay("domingo-output", storedDraw.results.domingo, CATEGORY_IDS);
+
+      const quintaCounts = countOccurrences(storedDraw.results.quinta);
+      const domingoCounts = countOccurrences(storedDraw.results.domingo);
+      renderSummary("quinta-summary", quintaCounts);
+      renderSummary("domingo-summary", domingoCounts);
+      renderSummary("total-summary", mergeCounts(quintaCounts, domingoCounts));
+    }
+
+    function pushResultsToCalendar(results) {
+      const calendarData = loadJsonStorage(CALENDAR_STORAGE_KEY) || {};
+
+      for (let weekIndex = 0; weekIndex < CALENDAR_WEEK_COUNT; weekIndex += 1) {
+        BASE_CATEGORY_IDS.forEach((categoryId) => {
+          const categoryLabel = labels[categoryId];
+          calendarData[`names:${weekIndex}:quinta:${categoryLabel}`] = "";
+          if (weekIndex < 4) {
+            calendarData[`names:${weekIndex}:domingo1:${categoryLabel}`] = "";
+            calendarData[`names:${weekIndex}:domingo2:${categoryLabel}`] = "";
+            calendarData[`names:${weekIndex}:domingo3:${categoryLabel}`] = "";
+          } else {
+            delete calendarData[`names:${weekIndex}:domingo1:${categoryLabel}`];
+            delete calendarData[`names:${weekIndex}:domingo2:${categoryLabel}`];
+            delete calendarData[`names:${weekIndex}:domingo3:${categoryLabel}`];
+          }
+        });
+
+        if (weekIndex < 4) {
+          calendarData[`names:${weekIndex}:domingo1:Superv`] = "";
+        } else {
+          delete calendarData[`names:${weekIndex}:domingo1:Superv`];
+        }
+      }
+
+      BASE_CATEGORY_IDS.forEach((categoryId) => {
+        const categoryLabel = labels[categoryId];
+        (results.quinta[categoryId] || []).forEach((name, index) => {
+          if (index < CALENDAR_WEEK_COUNT) {
+            calendarData[`names:${index}:quinta:${categoryLabel}`] = name;
+          }
+        });
+
+        (results.domingo[categoryId] || []).forEach((name, index) => {
+          const weekIndex = Math.floor(index / 3);
+          const sundaySlot = `domingo${(index % 3) + 1}`;
+          if (weekIndex < CALENDAR_WEEK_COUNT) {
+            calendarData[`names:${weekIndex}:${sundaySlot}:${categoryLabel}`] = name;
+          }
+        });
+      });
+
+      (results.domingo.superv || []).forEach((name, weekIndex) => {
+        if (weekIndex < 4) {
+          calendarData[`names:${weekIndex}:domingo1:Superv`] = name;
+        }
+      });
+
+      saveJsonStorage(CALENDAR_STORAGE_KEY, calendarData);
+      return "calendario completo";
+    }
+
+    function saveDraw(results, assignedWeek) {
+      saveJsonStorage(DRAW_STORAGE_KEY, {
+        savedAt: new Date().toISOString(),
+        assignedWeek,
+        results,
+      });
+    }
+
+    function saveSourceCategories(categories) {
+      saveJsonStorage(SOURCE_NAMES_STORAGE_KEY, categories);
+    }
+
+    function clearSavedDraw() {
+      localStorage.removeItem(DRAW_STORAGE_KEY);
+    }
+
+    function confirmNewDraw(existingDraw) {
+      if (!existingDraw) {
+        return true;
+      }
+
+      const confirmations = [
+        "Ja existe um sorteio salvo. Deseja realmente substituir esse resultado?",
+        "Confirmacao 2 de 3: o sorteio atual sera perdido nesta pagina. Continuar?",
+        "Confirmacao 3 de 3: gerar um novo sorteio agora?",
+      ];
+
+      return confirmations.every((message) => window.confirm(message));
+    }
+
+    function setStatus(message, type = "") {
+      const status = document.getElementById("status");
+      status.textContent = message;
+      status.className = `status ${type}`.trim();
+    }
+
+    function updateCounter(categoryId) {
+      const amount = readNames(categoryId).length;
+      const label = amount === 1 ? "nome" : "nomes";
+      document.getElementById(`count-${categoryId}`).textContent = `${amount} ${label}`;
+    }
+
+    function validate(categories) {
+      const minimumAmount = DAY_RULES.quinta;
+      const totalSlots = (DAY_RULES.quinta + DAY_RULES.domingo) * BASE_CATEGORY_IDS.length
+        + DAY_RULES.domingo1Superv;
+      const uniqueNames = new Set();
+
+      for (const categoryId of BASE_CATEGORY_IDS) {
+        if (categories[categoryId].length < minimumAmount) {
+          throw new Error(
+            `${labels[categoryId]} precisa ter pelo menos ${minimumAmount} nomes diferentes para preencher as 5 quintas sem repeticao.`
+          );
+        }
+      }
+
+      CATEGORY_IDS.forEach((categoryId) => {
+        categories[categoryId].forEach((name) => uniqueNames.add(name));
+      });
+
+      if (uniqueNames.size * 2 > totalSlots) {
+        throw new Error(
+          `Ha ${uniqueNames.size} nomes unicos no total. Para cada um aparecer pelo menos 2 vezes, o maximo e ${Math.floor(totalSlots / 2)} nomes unicos.`
+        );
+      }
+
+      if (categories.pc.length > DAY_RULES.quinta + DAY_RULES.domingo) {
+        throw new Error(
+          `PC tem ${categories.pc.length} nomes, mas so existem ${DAY_RULES.quinta + DAY_RULES.domingo} vagas de PC no ciclo.`
+        );
+      }
+
+      if (categories.superv.length === 0) {
+        throw new Error(
+          "Superv precisa ter pelo menos 1 nome para preencher todos os ZS07."
+        );
+      }
+
+      for (let weekIndex = 0; weekIndex < CALENDAR_WEEK_COUNT; weekIndex += 1) {
+        BASE_CATEGORY_IDS.forEach((categoryId) => {
+          const availableNames = categories[categoryId].filter(
+            (name) => !isBlockedForWeek(name, weekIndex)
+          );
+
+          if (availableNames.length === 0) {
+            throw new Error(
+              `${labels[categoryId]} nao tem nenhum nome disponivel para a Semana ${weekIndex + 1}.`
+            );
+          }
+        });
+
+        if (weekIndex < 4) {
+          const availableSuperv = categories.superv.filter(
+            (name) => !isBlockedForWeek(name, weekIndex)
+          );
+
+          if (availableSuperv.length === 0) {
+            throw new Error(
+              `Superv nao tem nenhum nome disponivel para o ZS07 da Semana ${weekIndex + 1}.`
+            );
+          }
+        }
+      }
+
+      const slots = buildCalendarSlots();
+      slots.forEach((slot) => {
+        const availableForSlot = categories[slot.categoryId].filter(
+          (name) => !isBlockedForSlot(name, slot)
+        );
+
+        if (availableForSlot.length === 0) {
+          throw new Error(
+            `${labels[slot.categoryId]} nao tem nenhum nome disponivel para ${slot.dayKey} na Semana ${slot.weekIndex + 1}.`
+          );
+        }
+      });
+    }
+
+    function buildNameAvailability(categories) {
+      const availability = new Map();
+
+      CATEGORY_IDS.forEach((categoryId) => {
+        categories[categoryId].forEach((name) => {
+          if (!availability.has(name)) {
+            availability.set(name, new Set());
+          }
+
+          availability.get(name).add(categoryId);
+        });
+      });
+
+      return availability;
+    }
+
+    function pickBestCandidate(candidates, globalCounts, availability, randomOrder) {
+      return [...candidates].sort((left, right) => {
+        const leftCount = globalCounts.get(left) || 0;
+        const rightCount = globalCounts.get(right) || 0;
+        const leftNeedsTarget = leftCount < 2 ? 0 : 1;
+        const rightNeedsTarget = rightCount < 2 ? 0 : 1;
+
+        if (leftNeedsTarget !== rightNeedsTarget) {
+          return leftNeedsTarget - rightNeedsTarget;
+        }
+
+        if (leftCount !== rightCount) {
+          return leftCount - rightCount;
+        }
+
+        const leftAvailability = availability.get(left)?.size || 0;
+        const rightAvailability = availability.get(right)?.size || 0;
+        if (leftAvailability !== rightAvailability) {
+          return leftAvailability - rightAvailability;
+        }
+
+        return (randomOrder.get(left) || 0) - (randomOrder.get(right) || 0);
+      })[0];
+    }
+
+    function createRandomOrder(categories) {
+      const allNames = new Set();
+      CATEGORY_IDS.forEach((categoryId) => {
+        categories[categoryId].forEach((name) => allNames.add(name));
+      });
+
+      return new Map(shuffle([...allNames]).map((name, index) => [name, index]));
+    }
+
+    function buildCalendarSlots() {
+      const slots = [];
+
+      for (let weekIndex = 0; weekIndex < CALENDAR_WEEK_COUNT; weekIndex += 1) {
+        BASE_CATEGORY_IDS.forEach((categoryId) => {
+          slots.push({
+            weekIndex,
+            dayKey: "quinta",
+            categoryId,
+            target: "quinta",
+            index: weekIndex,
+          });
+        });
+
+        if (weekIndex < 4) {
+          for (let sundayIndex = 0; sundayIndex < 3; sundayIndex += 1) {
+            BASE_CATEGORY_IDS.forEach((categoryId) => {
+              slots.push({
+                weekIndex,
+                dayKey: `domingo${sundayIndex + 1}`,
+                categoryId,
+                target: "domingo",
+                index: (weekIndex * 3) + sundayIndex,
+              });
+            });
+
+            if (sundayIndex === 0) {
+              slots.push({
+                weekIndex,
+                dayKey: "domingo1",
+                categoryId: "superv",
+                target: "domingo",
+                index: weekIndex,
+              });
+            }
+          }
+        }
+      }
+
+      return slots;
+    }
+
+    function getWeekNames(results, weekIndex) {
+      const weekNames = new Set();
+
+      BASE_CATEGORY_IDS.forEach((categoryId) => {
+        const quintaName = results.quinta[categoryId][weekIndex];
+        if (quintaName) {
+          weekNames.add(quintaName);
+        }
+
+        if (weekIndex < 4) {
+          for (let sundayIndex = 0; sundayIndex < 3; sundayIndex += 1) {
+            const sundayName = results.domingo[categoryId][(weekIndex * 3) + sundayIndex];
+            if (sundayName) {
+              weekNames.add(sundayName);
+            }
+          }
+        }
+      });
+
+      if (weekIndex < 4) {
+        const supervName = results.domingo.superv[weekIndex];
+        if (supervName) {
+          weekNames.add(supervName);
+        }
+      }
+
+      return weekNames;
+    }
+
+    function assignToSlot(results, slot, name) {
+      results[slot.target][slot.categoryId][slot.index] = name;
+    }
+
+    function createCategoryCounts() {
+      return Object.fromEntries(
+        CATEGORY_IDS.map((categoryId) => [categoryId, new Map()])
+      );
+    }
+
+    function incrementCategoryCount(categoryCounts, categoryId, name, amount) {
+      categoryCounts[categoryId].set(
+        name,
+        (categoryCounts[categoryId].get(name) || 0) + amount
+      );
+    }
+
+    function ensurePcCoverage(results, slots, globalCounts, categoryCounts, categories) {
+      categories.pc.forEach((name) => {
+        while ((categoryCounts.pc.get(name) || 0) < 1) {
+          let replaced = false;
+
+          for (const slot of slots) {
+            if (slot.categoryId !== "pc") {
+              continue;
+            }
+
+            if (isBlockedForSlot(name, slot)) {
+              continue;
+            }
+
+            const currentName = results[slot.target][slot.categoryId][slot.index];
+            if (!currentName || currentName === name || (categoryCounts.pc.get(currentName) || 0) <= 1) {
+              continue;
+            }
+
+            const weekNames = getWeekNames(results, slot.weekIndex);
+            weekNames.delete(currentName);
+            if (weekNames.has(name)) {
+              continue;
+            }
+
+            assignToSlot(results, slot, name);
+            incrementCategoryCount(categoryCounts, "pc", name, 1);
+            incrementCategoryCount(categoryCounts, "pc", currentName, -1);
+            globalCounts.set(name, (globalCounts.get(name) || 0) + 1);
+            globalCounts.set(currentName, globalCounts.get(currentName) - 1);
+            replaced = true;
+            break;
+          }
+
+          if (!replaced) {
+            throw new Error(
+              `Nao foi possivel fazer ${name} aparecer em PC sem repetir nomes na mesma semana.`
+            );
+          }
+        }
+      });
+    }
+
+    function ensureMinimumCounts(results, slots, globalCounts, availability, categoryCounts) {
+      const uniqueNames = [...availability.keys()];
+
+      uniqueNames.forEach((name) => {
+        while ((globalCounts.get(name) || 0) < 2) {
+          let replaced = false;
+
+          for (const slot of slots) {
+            if (!availability.get(name).has(slot.categoryId)) {
+              continue;
+            }
+
+            if (isBlockedForSlot(name, slot)) {
+              continue;
+            }
+
+            const currentName = results[slot.target][slot.categoryId][slot.index];
+            if (!currentName || currentName === name || (globalCounts.get(currentName) || 0) <= 2) {
+              continue;
+            }
+
+            const weekNames = getWeekNames(results, slot.weekIndex);
+            weekNames.delete(currentName);
+            if (weekNames.has(name)) {
+              continue;
+            }
+
+            assignToSlot(results, slot, name);
+            incrementCategoryCount(categoryCounts, slot.categoryId, name, 1);
+            incrementCategoryCount(categoryCounts, slot.categoryId, currentName, -1);
+            globalCounts.set(name, (globalCounts.get(name) || 0) + 1);
+            globalCounts.set(currentName, globalCounts.get(currentName) - 1);
+            replaced = true;
+            break;
+          }
+
+          if (!replaced) {
+            throw new Error(
+              `Nao foi possivel garantir 2 aparicoes para ${name} sem repetir nomes dentro da mesma semana.`
+            );
+          }
+        }
+      });
+    }
+
+    function buildBalancedGlobalSchedule(categories) {
+      const availability = buildNameAvailability(categories);
+      const globalCounts = new Map([...availability.keys()].map((name) => [name, 0]));
+      const categoryCounts = createCategoryCounts();
+      const randomOrder = createRandomOrder(categories);
+      const slots = buildCalendarSlots();
+      const results = {
+        quinta: Object.fromEntries(BASE_CATEGORY_IDS.map((categoryId) => [categoryId, Array(5).fill("")])),
+        domingo: {
+          ...Object.fromEntries(BASE_CATEGORY_IDS.map((categoryId) => [categoryId, Array(12).fill("")])),
+          superv: Array(4).fill(""),
+        },
+      };
+
+      slots.forEach((slot) => {
+        const weekNames = getWeekNames(results, slot.weekIndex);
+        let candidates = categories[slot.categoryId].filter(
+          (name) => !weekNames.has(name) && !isBlockedForSlot(name, slot)
+        );
+
+        if (slot.categoryId === "pc") {
+          const missingPcCandidates = candidates.filter(
+            (name) => (categoryCounts.pc.get(name) || 0) < 1
+          );
+          if (missingPcCandidates.length > 0) {
+            candidates = missingPcCandidates;
+          }
+        }
+
+        if (candidates.length === 0) {
+          throw new Error(
+            `Nao foi possivel montar a Semana ${slot.weekIndex + 1} sem repetir nomes na mesma semana. Ajuste as categorias.`
+          );
+        }
+
+        const chosenName = pickBestCandidate(
+          candidates,
+          globalCounts,
+          availability,
+          randomOrder
+        );
+
+        assignToSlot(results, slot, chosenName);
+        incrementCategoryCount(categoryCounts, slot.categoryId, chosenName, 1);
+        globalCounts.set(chosenName, (globalCounts.get(chosenName) || 0) + 1);
+      });
+
+      ensurePcCoverage(results, slots, globalCounts, categoryCounts, categories);
+      ensureMinimumCounts(results, slots, globalCounts, availability, categoryCounts);
+      return results;
+    }
+
+    function drawResults(categories) {
+      return buildBalancedGlobalSchedule(categories);
+    }
+
+    function generateDraw() {
+      try {
+        const existingDraw = loadJsonStorage(DRAW_STORAGE_KEY);
+        if (!confirmNewDraw(existingDraw)) {
+          setStatus("Novo sorteio cancelado. O resultado salvo foi mantido.", "error");
+          return;
+        }
+
+        const categories = Object.fromEntries(
+          CATEGORY_IDS.map((categoryId) => [categoryId, readNames(categoryId)])
+        );
+
+        validate(categories);
+        saveSourceCategories(categories);
+        const results = drawResults(categories);
+        const assignedWeek = pushResultsToCalendar(results);
+        saveDraw(results, assignedWeek);
+        renderDay("quinta-output", results.quinta, BASE_CATEGORY_IDS);
+        renderDay("domingo-output", results.domingo, CATEGORY_IDS);
+        renderCalendarSummaries();
+
+        setStatus(
+          "Sorteio gerado, salvo no navegador e distribuido diretamente no calendario.",
+          "success"
+        );
+      } catch (error) {
+        document.getElementById("quinta-output").innerHTML = "";
+        document.getElementById("domingo-output").innerHTML = "";
+        renderCalendarSummaries();
+        setStatus(error.message, "error");
+      }
+    }
+
+    function clearOutputs() {
+      if (!window.confirm("Deseja realmente limpar os resultados salvos desta pagina?")) {
+        setStatus("Limpeza cancelada. O resultado salvo foi mantido.", "error");
+        return;
+      }
+
+      document.getElementById("quinta-output").innerHTML = "";
+      document.getElementById("domingo-output").innerHTML = "";
+      document.getElementById("quinta-summary").innerHTML = "";
+      document.getElementById("domingo-summary").innerHTML = "";
+      document.getElementById("total-summary").innerHTML = "";
+      clearSavedDraw();
+      setStatus("Resultado salvo removido desta pagina. O calendario foi mantido.", "success");
+      renderCalendarSummaries();
+    }
+
+    populatePredefinedNames();
+    CATEGORY_IDS.forEach((categoryId) => updateCounter(categoryId));
+    saveSourceCategories(
+      Object.fromEntries(CATEGORY_IDS.map((categoryId) => [categoryId, readNames(categoryId)]))
+    );
+    const initialStoredDraw = loadJsonStorage(DRAW_STORAGE_KEY);
+    renderStoredDraw(initialStoredDraw);
+    renderCalendarSummaries();
+    if (initialStoredDraw && initialStoredDraw.results) {
+      setStatus(
+        "Existe um sorteio salvo nesta pagina. Ele ja foi distribuido no calendario.",
+        "success"
+      );
+    }
+
+    document.getElementById("sortearBtn").addEventListener("click", generateDraw);
+    document.getElementById("limparBtn").addEventListener("click", clearOutputs);
+  </script>
+</body>
+</html>

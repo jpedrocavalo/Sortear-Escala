@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendario de Escala</title>
+  <style>
+    :root {
+      --bg: #eef2f7;
+      --panel: #ffffff;
+      --line: #d6deea;
+      --ink: #19324d;
+      --accent: #0d9488;
+      --accent-dark: #0f766e;
+      --soft: #f7fafc;
+      --danger-bg: #fde8e8;
+      --danger-line: #ef4444;
+      --danger-ink: #991b1b;
+      --warning-bg: #ffedd5;
+      --warning-line: #f97316;
+      --warning-ink: #9a3412;
+      --week-bg: #dbeafe;
+      --week-line: #3b82f6;
+      --week-ink: #1d4ed8;
+      --repeat-bg: #fef9c3;
+      --repeat-line: #eab308;
+      --repeat-ink: #854d0e;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background:
+        radial-gradient(circle at top left, #dff7f4, transparent 28%),
+        radial-gradient(circle at bottom right, #dce8ff, transparent 24%),
+        var(--bg);
+      color: var(--ink);
+      padding: 32px 16px;
+    }
+
+    .app {
+      max-width: 1600px;
+      margin: 0 auto;
+      display: grid;
+      gap: 24px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 18px 50px rgba(25, 50, 77, 0.08);
+      padding: 24px;
+    }
+
+    .header {
+      display: grid;
+      gap: 10px;
+    }
+
+    .header p {
+      margin: 0;
+      line-height: 1.5;
+      color: #4b647f;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #4b647f;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      border: 1px solid currentColor;
+      flex: 0 0 auto;
+    }
+
+    .button,
+    .link-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+
+    .button:hover,
+    .link-button:hover {
+      transform: translateY(-1px);
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .primary:hover {
+      background: var(--accent-dark);
+    }
+
+    .secondary {
+      background: #e7eef7;
+      color: var(--ink);
+    }
+
+    .link-button {
+      background: #19324d;
+      color: #fff;
+    }
+
+    .week-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .content-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 2.5fr) minmax(420px, 560px);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .sidebar {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      position: sticky;
+      top: 16px;
+    }
+
+    .week-card {
+      display: grid;
+      grid-template-columns: 150px repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .board-header {
+      display: grid;
+      grid-template-columns: 150px repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .board-header-cell,
+    .week-label {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      padding: 16px;
+      font-weight: 800;
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+    }
+
+    .board-header-cell {
+      justify-content: center;
+      text-align: center;
+    }
+
+    .week-label {
+      justify-content: space-between;
+      color: var(--ink);
+      gap: 12px;
+    }
+
+    .week-label-text {
+      font-size: 18px;
+    }
+
+    .week-check {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #4b647f;
+      white-space: nowrap;
+    }
+
+    .week-check input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+    }
+
+    .days-grid {
+      display: contents;
+    }
+
+    .day-card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      background: var(--soft);
+      display: grid;
+      gap: 14px;
+    }
+
+    .day-card.empty {
+      background: rgba(247, 250, 252, 0.55);
+      color: #7a8ea6;
+      place-items: center;
+      text-align: center;
+    }
+
+    .day-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .day-header h3 {
+      margin: 0;
+    }
+
+    .date-input {
+      border: 1px solid #c7d2e0;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font: inherit;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 14px;
+    }
+
+    .category-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .category-card label {
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .name-select {
+      width: 100%;
+      border: 1px solid #c7d2e0;
+      border-radius: 10px;
+      padding: 10px;
+      font: inherit;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .category-card.is-danger,
+    .name-select.is-danger {
+      background: var(--danger-bg);
+      border-color: var(--danger-line);
+      color: var(--danger-ink);
+    }
+
+    .category-card.is-warning,
+    .name-select.is-warning {
+      background: var(--warning-bg);
+      border-color: var(--warning-line);
+      color: var(--warning-ink);
+    }
+
+    .category-card.is-week,
+    .name-select.is-week {
+      background: var(--week-bg);
+      border-color: var(--week-line);
+      color: var(--week-ink);
+    }
+
+    .category-card.is-repeat,
+    .name-select.is-repeat {
+      background: var(--repeat-bg);
+      border-color: var(--repeat-line);
+      color: var(--repeat-ink);
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .sidebar .summary-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .sidebar .card {
+      padding: 18px;
+    }
+
+    .summary-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    }
+
+    .summary-card h2 {
+      margin-top: 0;
+      margin-bottom: 14px;
+      font-size: 20px;
+    }
+
+    .summary-empty {
+      margin: 0;
+      color: #5f748d;
+    }
+
+    .summary-name-list {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .summary-name-list li {
+      line-height: 1.4;
+    }
+
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .summary-table th,
+    .summary-table td {
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+    }
+
+    .summary-table th:last-child,
+    .summary-table td:last-child {
+      text-align: right;
+      width: 80px;
+    }
+
+    .status {
+      margin: 0;
+      min-height: 24px;
+      font-weight: 600;
+      color: var(--accent-dark);
+    }
+
+    @media (max-width: 980px) {
+      .content-layout,
+      .sidebar,
+      .summary-grid,
+      .category-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .board-header {
+        display: none;
+      }
+
+      .week-card {
+        grid-template-columns: 1fr;
+      }
+
+      .days-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 18px;
+      }
+
+      .sidebar {
+        position: static;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="card header">
+      <h1>Calendario de escala</h1>
+      <p>Organize os nomes por semana com espaco para 3 categorias na quinta-feira, para C1/C2/PC em todos os domingos e para Superv apenas no ZS07 das Semanas 1 a 4. A Semana 5 fica so com quinta-feira.</p>
+      <p>Os dados desta pagina ficam salvos no navegador deste computador.</p>
+      <div class="controls">
+        <a class="link-button" href="./Sorteio.html">Voltar para o sorteio</a>
+        <button class="button primary" id="saveBtn" type="button">Salvar calendario</button>
+        <button class="button primary" id="rerollBtn" type="button">Resortear vazios</button>
+        <button class="button primary" id="exportSheetsBtn" type="button">Enviar para Google Sheets</button>
+        <button class="button secondary" id="clearBtn" type="button">Limpar calendario</button>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-swatch" style="background: var(--danger-bg); color: var(--danger-line);"></span>Vermelho: vazio</span>
+        <span class="legend-item"><span class="legend-swatch" style="background: var(--warning-bg); color: var(--warning-line);"></span>Laranja: 4+ no total ou 3+ na categoria</span>
+        <span class="legend-item"><span class="legend-swatch" style="background: var(--week-bg); color: var(--week-line);"></span>Azul: repetida no mesmo dia ou em ate 7 dias</span>
+        <span class="legend-item"><span class="legend-swatch" style="background: var(--repeat-bg); color: var(--repeat-line);"></span>Amarelo: repetido na quinta</span>
+      </div>
+      <p class="status" id="status"></p>
+    </section>
+
+    <section class="content-layout">
+      <section class="week-grid" id="week-grid"></section>
+
+      <aside class="sidebar">
+        <section class="card">
+          <div class="summary-grid">
+            <article class="summary-card">
+              <h2>Quinta-feira</h2>
+              <div id="quinta-summary"></div>
+            </article>
+
+            <article class="summary-card">
+              <h2>Domingos</h2>
+              <div id="domingo-summary"></div>
+            </article>
+
+            <article class="summary-card">
+              <h2>Total geral</h2>
+              <div id="total-summary"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="summary-grid">
+            <article class="summary-card">
+              <h2>C1</h2>
+              <div id="c1-summary"></div>
+            </article>
+
+            <article class="summary-card">
+              <h2>C2</h2>
+              <div id="c2-summary"></div>
+            </article>
+
+            <article class="summary-card">
+              <h2>PC</h2>
+              <div id="pc-summary"></div>
+            </article>
+
+            <article class="summary-card">
+              <h2>Superv</h2>
+              <div id="superv-summary"></div>
+            </article>
+
+            <article class="summary-card">
+              <h2>PC Sem Quinta</h2>
+              <div id="pc-zero-quinta-summary"></div>
+            </article>
+          </div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script src="./nomes-config.js"></script>
+  <script src="./google-sheets-config.js"></script>
+  <script>
+    const STORAGE_KEY = "calendario-escala-v1";
+    const SOURCE_NAMES_STORAGE_KEY = "sorteio-categorias-v1";
+    const DEFAULT_FIRST_QUINTA = "2026-04-02";
+    const GOOGLE_SHEETS_CONFIG = window.GOOGLE_SHEETS_CONFIG || {
+      webAppUrl: "",
+      spreadsheetUrl: ""
+    };
+    const WEEKS = ["Semana 1", "Semana 2", "Semana 3", "Semana 4", "Semana 5"];
+    const DAYS = [
+      { key: "quinta", label: "Quinta" },
+      { key: "domingo1", label: "ZS07" },
+      { key: "domingo2", label: "ZS10" },
+      { key: "domingo3", label: "ZS16" },
+    ];
+    const BASE_CATEGORIES = ["C1", "C2", "PC"];
+    const EXTRA_DAY_CATEGORIES = {
+      domingo1: ["Superv"],
+    };
+    const CATEGORIES = [...BASE_CATEGORIES, "Superv"];
+    const PEOPLE_CONFIG = window.PEOPLE_CONFIG || {};
+    const CATEGORY_KEY_MAP = {
+      C1: "c1",
+      C2: "c2",
+      PC: "pc",
+      Superv: "superv",
+    };
+
+    function getPersonRules(name) {
+      return PEOPLE_CONFIG[name]?.rules || {};
+    }
+
+    function normalizeBlockedDay(day) {
+      const value = String(day || "").trim().toLowerCase();
+      const aliases = {
+        quinta: "quinta",
+        domingo1: "domingo1",
+        domingo2: "domingo2",
+        domingo3: "domingo3",
+        zs07: "domingo1",
+        zs10: "domingo2",
+        zs16: "domingo3",
+      };
+
+      return aliases[value] || value;
+    }
+
+    function isBlockedForWeek(name, weekIndex) {
+      const blockedWeeks = getPersonRules(name).blockedWeeks;
+      return Array.isArray(blockedWeeks) && blockedWeeks.includes(Number(weekIndex) + 1);
+    }
+
+    function isBlockedForDay(name, dayKey) {
+      const blockedDays = getPersonRules(name).blockedDays;
+      if (!Array.isArray(blockedDays)) {
+        return false;
+      }
+
+      const normalizedDayKey = normalizeBlockedDay(dayKey);
+      return blockedDays.some((day) => normalizeBlockedDay(day) === normalizedDayKey);
+    }
+
+    function isBlockedForSlot(name, weekIndex, dayKey) {
+      return isBlockedForWeek(name, weekIndex) || isBlockedForDay(name, dayKey);
+    }
+
+    function setStatus(message) {
+      document.getElementById("status").textContent = message;
+    }
+
+    function loadJsonStorage(key) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function countNamesFromValue(value) {
+      return value
+        .split(/\r?\n/)
+        .map((name) => name.trim())
+        .filter(Boolean);
+    }
+
+    function mergeCounts(...maps) {
+      const merged = new Map();
+
+      maps.forEach((counts) => {
+        counts.forEach((amount, name) => {
+          merged.set(name, (merged.get(name) || 0) + amount);
+        });
+      });
+
+      return merged;
+    }
+
+    function sortCounts(counts) {
+      return [...counts.entries()].sort((left, right) => {
+        if (right[1] !== left[1]) {
+          return right[1] - left[1];
+        }
+
+        return left[0].localeCompare(right[0], "pt-BR");
+      });
+    }
+
+    function renderSummary(containerId, counts, allNames) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = "";
+
+      const mergedCounts = new Map(counts);
+      (allNames || []).forEach((name) => {
+        if (!mergedCounts.has(name)) {
+          mergedCounts.set(name, 0);
+        }
+      });
+
+      const entries = sortCounts(mergedCounts);
+      if (entries.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "summary-empty";
+        empty.textContent = "Nenhum nome preenchido ainda.";
+        container.appendChild(empty);
+        return;
+      }
+
+      const table = document.createElement("table");
+      table.className = "summary-table";
+
+      const thead = document.createElement("thead");
+      thead.innerHTML = "<tr><th>Nome</th><th>Vezes</th></tr>";
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      entries.forEach(([name, amount]) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${name}</td><td>${amount}</td>`;
+        tbody.appendChild(row);
+      });
+      table.appendChild(tbody);
+
+      container.appendChild(table);
+    }
+
+    function renderNameList(containerId, names, emptyMessage) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = "";
+
+      if (!names || names.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "summary-empty";
+        empty.textContent = emptyMessage;
+        container.appendChild(empty);
+        return;
+      }
+
+      const list = document.createElement("ul");
+      list.className = "summary-name-list";
+
+      names.forEach((name) => {
+        const item = document.createElement("li");
+        item.textContent = name;
+        list.appendChild(item);
+      });
+
+      container.appendChild(list);
+    }
+
+    function getCalendarCounts(payload) {
+      const quintaCounts = new Map();
+      const domingoCounts = new Map();
+      const categoryCounts = {
+        C1: new Map(),
+        C2: new Map(),
+        PC: new Map(),
+        Superv: new Map(),
+      };
+
+      Object.entries(payload).forEach(([key, value]) => {
+        if (!key.startsWith("names:")) {
+          return;
+        }
+
+        const [, , day, category] = key.split(":");
+        const targetMap = day === "quinta"
+          ? quintaCounts
+          : day.startsWith("domingo")
+            ? domingoCounts
+            : null;
+
+        if (!targetMap) {
+          return;
+        }
+
+        countNamesFromValue(value).forEach((name) => {
+          targetMap.set(name, (targetMap.get(name) || 0) + 1);
+          if (categoryCounts[category]) {
+            categoryCounts[category].set(
+              name,
+              (categoryCounts[category].get(name) || 0) + 1
+            );
+          }
+        });
+      });
+
+      return {
+        quinta: quintaCounts,
+        domingo: domingoCounts,
+        total: mergeCounts(quintaCounts, domingoCounts),
+        categories: categoryCounts,
+      };
+    }
+
+    function updateCountSummaries() {
+      const payload = readCalendarPayload();
+      const counts = getCalendarCounts(payload);
+      const sourceNames = buildSourceNamesByCategory(payload);
+      const allPeople = [...new Set([
+        ...sourceNames.C1,
+        ...sourceNames.C2,
+        ...sourceNames.PC,
+        ...sourceNames.Superv,
+      ])];
+
+      renderSummary("quinta-summary", counts.quinta, allPeople);
+      renderSummary("domingo-summary", counts.domingo, allPeople);
+      renderSummary("total-summary", counts.total, allPeople);
+      renderSummary("c1-summary", counts.categories.C1, sourceNames.C1);
+      renderSummary("c2-summary", counts.categories.C2, sourceNames.C2);
+      renderSummary("pc-summary", counts.categories.PC, sourceNames.PC);
+      renderSummary("superv-summary", counts.categories.Superv, sourceNames.Superv);
+      renderNameList(
+        "pc-zero-quinta-summary",
+        sourceNames.PC
+          .filter((name) => (counts.quinta.get(name) || 0) === 0)
+          .sort((left, right) => left.localeCompare(right, "pt-BR")),
+        "Todas as pessoas de PC ja apareceram na quinta-feira."
+      );
+    }
+
+    function updateSelectionAlerts(payload = readCalendarPayload()) {
+      const counts = getCalendarCounts(payload);
+      const nameOccurrences = new Map();
+      const dayOrder = {
+        quinta: 0,
+        domingo1: 1,
+        domingo2: 2,
+        domingo3: 3,
+      };
+      const categoryOrder = {
+        C1: 0,
+        C2: 1,
+        PC: 2,
+        Superv: 3,
+      };
+
+      Object.entries(payload).forEach(([key, value]) => {
+        if (!key.startsWith("names:")) {
+          return;
+        }
+
+        const [, weekIndex, dayKey, category] = key.split(":");
+        const dateKey = `date:${weekIndex}:${dayKey}`;
+        const dateValue = payload[dateKey];
+        countNamesFromValue(value).forEach((name) => {
+          if (!nameOccurrences.has(name)) {
+            nameOccurrences.set(name, []);
+          }
+
+          nameOccurrences.get(name).push({
+            weekIndex: Number(weekIndex),
+            dayKey,
+            category,
+            dateValue,
+            fieldKey: `names:${weekIndex}:${dayKey}:${category}`,
+          });
+        });
+      });
+
+      const repeatedWithinSevenDays = new Set();
+      nameOccurrences.forEach((occurrences) => {
+        const sortedOccurrences = occurrences
+          .filter((occurrence) => occurrence.dateValue)
+          .sort((left, right) => {
+            const dateCompare = left.dateValue.localeCompare(right.dateValue);
+            if (dateCompare !== 0) {
+              return dateCompare;
+            }
+
+            const dayCompare = (dayOrder[left.dayKey] ?? 99) - (dayOrder[right.dayKey] ?? 99);
+            if (dayCompare !== 0) {
+              return dayCompare;
+            }
+
+            const categoryCompare = (categoryOrder[left.category] ?? 99) - (categoryOrder[right.category] ?? 99);
+            if (categoryCompare !== 0) {
+              return categoryCompare;
+            }
+
+            return left.fieldKey.localeCompare(right.fieldKey);
+          });
+
+        for (let index = 1; index < sortedOccurrences.length; index += 1) {
+          const current = sortedOccurrences[index];
+          const previous = sortedOccurrences[index - 1];
+          const currentDate = new Date(`${current.dateValue}T12:00:00`);
+          const previousDate = new Date(`${previous.dateValue}T12:00:00`);
+          const diffDays = (currentDate - previousDate) / (1000 * 60 * 60 * 24);
+
+          if (diffDays >= 0 && diffDays <= 7) {
+            repeatedWithinSevenDays.add(current.fieldKey);
+          }
+        }
+      });
+
+      document.querySelectorAll('select[data-type="names"]').forEach((field) => {
+        const selectedName = field.value.trim();
+        const category = field.dataset.category;
+        const weekIndex = Number(field.dataset.week);
+        const dayKey = field.dataset.day;
+        const fieldKey = `names:${field.dataset.week}:${field.dataset.day}:${category}`;
+        const card = field.closest(".category-card");
+        const totalCount = selectedName ? (counts.total.get(selectedName) || 0) : 0;
+        const categoryCount = selectedName
+          ? (counts.categories[category]?.get(selectedName) || 0)
+          : 0;
+        const hasRepeatedWithinSevenDays = selectedName
+          ? repeatedWithinSevenDays.has(fieldKey)
+          : false;
+        const hasRepeatedThursday = selectedName
+          ? dayKey === "quinta" && (counts.quinta.get(selectedName) || 0) > 1
+          : false;
+
+        const state = !selectedName
+          ? "is-danger"
+          : totalCount >= 4 || categoryCount >= 3
+            ? "is-warning"
+            : hasRepeatedWithinSevenDays
+              ? "is-week"
+              : hasRepeatedThursday
+                ? "is-repeat"
+                : "";
+
+        ["is-danger", "is-warning", "is-week", "is-repeat"].forEach((className) => {
+          field.classList.remove(className);
+          if (card) {
+            card.classList.remove(className);
+          }
+        });
+
+        if (state) {
+          field.classList.add(state);
+          if (card) {
+            card.classList.add(state);
+          }
+        }
+
+        if (!selectedName) {
+          field.title = "Campo vazio.";
+          return;
+        }
+
+        const reasons = [];
+        if (totalCount >= 4 || categoryCount >= 3) {
+          reasons.push(`${totalCount} no total, ${categoryCount} em ${category}`);
+        }
+        if (hasRepeatedWithinSevenDays) {
+          reasons.push("repetida no mesmo dia ou em ate 7 dias");
+        }
+        if (hasRepeatedThursday) {
+          reasons.push("aparece mais de uma vez na quinta-feira");
+        }
+
+        field.title = reasons.length > 0
+          ? `${selectedName}: ${reasons.join("; ")}.`
+          : "";
+      });
+    }
+
+    function readCalendarPayload() {
+      const payload = {};
+
+      document.querySelectorAll("[data-type]").forEach((field) => {
+        const keyParts = [field.dataset.type, field.dataset.week, field.dataset.day];
+        if (field.dataset.category) {
+          keyParts.push(field.dataset.category);
+        }
+
+        payload[keyParts.join(":")] = field.type === "checkbox"
+          ? String(field.checked)
+          : field.value;
+      });
+
+      return payload;
+    }
+
+    function getVisibleDaysForWeek(weekIndex) {
+      if (weekIndex === 4) {
+        return DAYS.filter((day) => day.key === "quinta");
+      }
+
+      return DAYS;
+    }
+
+    function getCategoriesForDay(dayKey) {
+      return [...BASE_CATEGORIES, ...(EXTRA_DAY_CATEGORIES[dayKey] || [])];
+    }
+
+    function addDays(dateString, days) {
+      const date = new Date(`${dateString}T12:00:00`);
+      date.setDate(date.getDate() + days);
+      return date.toISOString().slice(0, 10);
+    }
+
+    function applyAutomaticDates(firstQuintaDate = "") {
+      const initialDate = firstQuintaDate
+        || document.querySelector('[data-type="date"][data-week="0"][data-day="quinta"]')?.value
+        || DEFAULT_FIRST_QUINTA;
+
+      WEEKS.forEach((_, weekIndex) => {
+        const quintaDate = addDays(initialDate, weekIndex * 7);
+        const quintaInput = document.querySelector(`[data-type="date"][data-week="${weekIndex}"][data-day="quinta"]`);
+        if (quintaInput) {
+          quintaInput.value = quintaDate;
+        }
+
+        if (weekIndex < 4) {
+          const domingoDate = addDays(quintaDate, 3);
+          ["domingo1", "domingo2", "domingo3"].forEach((dayKey) => {
+            const sundayInput = document.querySelector(`[data-type="date"][data-week="${weekIndex}"][data-day="${dayKey}"]`);
+            if (sundayInput) {
+              sundayInput.value = domingoDate;
+            }
+          });
+        }
+      });
+    }
+
+    function buildSourceNamesByCategory(payload) {
+      const storedSources = loadJsonStorage(SOURCE_NAMES_STORAGE_KEY) || {};
+      const sources = {
+        C1: [],
+        C2: [],
+        PC: [],
+        Superv: [],
+      };
+
+      Object.entries(PEOPLE_CONFIG).forEach(([name, config]) => {
+        const categories = Array.isArray(config?.categories) ? config.categories : [];
+        categories.forEach((categoryId) => {
+          const categoryLabel = Object.keys(CATEGORY_KEY_MAP).find((label) => CATEGORY_KEY_MAP[label] === categoryId);
+          if (categoryLabel && !sources[categoryLabel].includes(name)) {
+            sources[categoryLabel].push(name);
+          }
+        });
+      });
+
+      CATEGORIES.forEach((category) => {
+        const storedKey = CATEGORY_KEY_MAP[category];
+        const storedNames = Array.isArray(storedSources[storedKey]) ? storedSources[storedKey] : [];
+        const mergedNames = [...sources[category], ...storedNames];
+        const cleanedNames = [...new Set(mergedNames.map((name) => name.trim()).filter(Boolean))];
+
+        if (cleanedNames.length > 0) {
+          sources[category] = cleanedNames;
+          return;
+        }
+
+        const namesFromCalendar = new Set();
+        Object.entries(payload).forEach(([key, value]) => {
+          if (!key.startsWith("names:") || !key.endsWith(`:${category}`)) {
+            return;
+          }
+
+          countNamesFromValue(value).forEach((name) => namesFromCalendar.add(name));
+        });
+
+        sources[category] = [...namesFromCalendar];
+      });
+
+      return sources;
+    }
+
+    function pickLeastUsedName(names, totalCounts) {
+      const shuffledNames = [...names];
+      for (let index = shuffledNames.length - 1; index > 0; index -= 1) {
+        const randomIndex = Math.floor(Math.random() * (index + 1));
+        [shuffledNames[index], shuffledNames[randomIndex]] = [shuffledNames[randomIndex], shuffledNames[index]];
+      }
+
+      return shuffledNames.sort((left, right) => {
+        const leftCount = totalCounts.get(left) || 0;
+        const rightCount = totalCounts.get(right) || 0;
+
+        if (leftCount !== rightCount) {
+          return leftCount - rightCount;
+        }
+
+        return left.localeCompare(right, "pt-BR");
+      })[0];
+    }
+
+    function getWeekNamesFromPayload(payload, weekIndex) {
+      const names = new Set();
+
+      Object.entries(payload).forEach(([key, value]) => {
+        if (!key.startsWith(`names:${weekIndex}:`)) {
+          return;
+        }
+
+        countNamesFromValue(value).forEach((name) => names.add(name));
+      });
+
+      return names;
+    }
+
+    function rerollEmptySlots() {
+      const payload = readCalendarPayload();
+      const counts = getCalendarCounts(payload);
+      const sourceNames = buildSourceNamesByCategory(payload);
+      const emptyFields = [...document.querySelectorAll('select[data-type="names"]')]
+        .filter((field) => !field.value.trim());
+
+      if (emptyFields.length === 0) {
+        setStatus("Nao ha espacos vazios para resortear.");
+        return;
+      }
+
+      let filledCount = 0;
+      let blockedCount = 0;
+
+      emptyFields.forEach((field) => {
+        const category = field.dataset.category;
+        const weekIndex = field.dataset.week;
+        const dayKey = field.dataset.day;
+        const weekNames = getWeekNamesFromPayload(payload, weekIndex);
+        const eligibleNames = (sourceNames[category] || []).filter(
+          (name) => (
+            (counts.total.get(name) || 0) < 3
+            && !weekNames.has(name)
+            && !isBlockedForSlot(name, weekIndex, dayKey)
+          )
+        );
+
+        if (eligibleNames.length === 0) {
+          blockedCount += 1;
+          return;
+        }
+
+        const selectedName = pickLeastUsedName(eligibleNames, counts.total);
+        field.value = selectedName;
+        payload[`names:${field.dataset.week}:${field.dataset.day}:${category}`] = selectedName;
+        counts.total.set(selectedName, (counts.total.get(selectedName) || 0) + 1);
+        counts.categories[category].set(
+          selectedName,
+          (counts.categories[category].get(selectedName) || 0) + 1
+        );
+
+        if (dayKey === "quinta") {
+          counts.quinta.set(selectedName, (counts.quinta.get(selectedName) || 0) + 1);
+        } else {
+          counts.domingo.set(selectedName, (counts.domingo.get(selectedName) || 0) + 1);
+        }
+
+        filledCount += 1;
+      });
+
+      if (filledCount === 0) {
+        setStatus("Os espacos vazios nao puderam ser preenchidos porque todos os nomes elegiveis ja apareceram 3 vezes ou mais.");
+        return;
+      }
+
+      if (blockedCount > 0) {
+        saveCalendar(
+          `Resorteio concluido com ${filledCount} espacos preenchidos. ${blockedCount} espacos ficaram vazios porque todos os nomes elegiveis ja apareceram 3 vezes ou mais.`
+        );
+        return;
+      }
+
+      saveCalendar(`Resorteio concluido com ${filledCount} espacos preenchidos.`);
+    }
+
+    function createEmptyDayCard() {
+      const emptyCard = document.createElement("section");
+      emptyCard.className = "day-card empty";
+      emptyCard.textContent = "Sem escala";
+      return emptyCard;
+    }
+
+    function createWeekCard(weekLabel, weekIndex) {
+      const article = document.createElement("article");
+      article.className = "week-card";
+
+      const title = document.createElement("div");
+      title.className = "week-label";
+
+      const titleText = document.createElement("span");
+      titleText.className = "week-label-text";
+      titleText.textContent = weekLabel;
+      title.appendChild(titleText);
+
+      const weekCheck = document.createElement("label");
+      weekCheck.className = "week-check";
+
+      const weekCheckInput = document.createElement("input");
+      weekCheckInput.type = "checkbox";
+      weekCheckInput.dataset.type = "checked";
+      weekCheckInput.dataset.week = String(weekIndex);
+      weekCheckInput.dataset.day = "status";
+      weekCheck.appendChild(weekCheckInput);
+
+      const weekCheckText = document.createElement("span");
+      weekCheckText.textContent = "Check";
+      weekCheck.appendChild(weekCheckText);
+
+      title.appendChild(weekCheck);
+      article.appendChild(title);
+
+      const daysGrid = document.createElement("div");
+      daysGrid.className = "days-grid";
+
+      DAYS.forEach((day) => {
+        if (!getVisibleDaysForWeek(weekIndex).some((visibleDay) => visibleDay.key === day.key)) {
+          daysGrid.appendChild(createEmptyDayCard());
+          return;
+        }
+
+        const dayCard = document.createElement("section");
+        dayCard.className = "day-card";
+
+        const dayHeader = document.createElement("div");
+        dayHeader.className = "day-header";
+
+        const dayTitle = document.createElement("h3");
+        dayTitle.textContent = day.label;
+        dayHeader.appendChild(dayTitle);
+
+        const dateInput = document.createElement("input");
+        dateInput.type = "date";
+        dateInput.className = "date-input";
+        dateInput.dataset.type = "date";
+        dateInput.dataset.week = String(weekIndex);
+        dateInput.dataset.day = day.key;
+        if (!(weekIndex === 0 && day.key === "quinta")) {
+          dateInput.readOnly = true;
+        }
+        dayHeader.appendChild(dateInput);
+        dayCard.appendChild(dayHeader);
+
+        const categoryGrid = document.createElement("div");
+        categoryGrid.className = "category-grid";
+
+        getCategoriesForDay(day.key).forEach((category) => {
+          const categoryCard = document.createElement("div");
+          categoryCard.className = "category-card";
+
+          const label = document.createElement("label");
+          label.textContent = category;
+          categoryCard.appendChild(label);
+
+          const select = document.createElement("select");
+          select.className = "name-select";
+          select.dataset.type = "names";
+          select.dataset.week = String(weekIndex);
+          select.dataset.day = day.key;
+          select.dataset.category = category;
+          categoryCard.appendChild(select);
+
+          categoryGrid.appendChild(categoryCard);
+        });
+
+        dayCard.appendChild(categoryGrid);
+        daysGrid.appendChild(dayCard);
+      });
+
+      article.appendChild(daysGrid);
+      return article;
+    }
+
+    function createBoardHeader() {
+      const header = document.createElement("div");
+      header.className = "board-header";
+
+      const labels = ["Semana", ...DAYS.map((day) => day.label)];
+      labels.forEach((label) => {
+        const cell = document.createElement("div");
+        cell.className = "board-header-cell";
+        cell.textContent = label;
+        header.appendChild(cell);
+      });
+
+      return header;
+    }
+
+    function buildCalendar() {
+      const weekGrid = document.getElementById("week-grid");
+      weekGrid.innerHTML = "";
+      weekGrid.appendChild(createBoardHeader());
+
+      WEEKS.forEach((weekLabel, index) => {
+        weekGrid.appendChild(createWeekCard(weekLabel, index));
+      });
+    }
+
+    function refreshNameOptions(payload = readCalendarPayload()) {
+      const sourceNames = buildSourceNamesByCategory(payload);
+
+      document.querySelectorAll('select[data-type="names"]').forEach((field) => {
+        const category = field.dataset.category;
+        const currentValue = field.value;
+        const weekIndex = field.dataset.week;
+        const dayKey = field.dataset.day;
+        const availableNames = [...(sourceNames[category] || [])].filter(
+          (name) => !isBlockedForSlot(name, weekIndex, dayKey)
+        );
+
+        if (currentValue && !availableNames.includes(currentValue)) {
+          availableNames.push(currentValue);
+        }
+
+        availableNames.sort((left, right) => left.localeCompare(right, "pt-BR"));
+        field.innerHTML = "";
+
+        const emptyOption = document.createElement("option");
+        emptyOption.value = "";
+        emptyOption.textContent = "Selecione uma pessoa";
+        field.appendChild(emptyOption);
+
+        availableNames.forEach((name) => {
+          const option = document.createElement("option");
+          option.value = name;
+          option.textContent = name;
+          field.appendChild(option);
+        });
+
+        field.value = currentValue || "";
+      });
+    }
+
+    function saveCalendar(message = "Calendario salvo no navegador.") {
+      const payload = readCalendarPayload();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      refreshNameOptions(payload);
+      updateCountSummaries();
+      updateSelectionAlerts(payload);
+      setStatus(message);
+    }
+
+    function loadCalendar() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        return;
+      }
+
+      try {
+        const payload = JSON.parse(raw);
+        const migratedPayload = { ...payload };
+
+        Object.keys(payload).forEach((key) => {
+          if (!key.includes(":domingo:")) {
+            return;
+          }
+
+          const migratedKey = key.replace(":domingo:", ":domingo1:");
+          if (!(migratedKey in migratedPayload)) {
+            migratedPayload[migratedKey] = payload[key];
+          }
+        });
+
+        document.querySelectorAll("[data-type]").forEach((field) => {
+          const keyParts = [field.dataset.type, field.dataset.week, field.dataset.day];
+          if (field.dataset.category) {
+            keyParts.push(field.dataset.category);
+          }
+
+          const storedValue = migratedPayload[keyParts.join(":")] || "";
+          if (field.type === "checkbox") {
+            field.checked = storedValue === "true";
+            return;
+          }
+
+          field.value = storedValue;
+        });
+        CATEGORIES.forEach((category) => {
+          delete migratedPayload[`names:4:domingo1:${category}`];
+          delete migratedPayload[`names:4:domingo2:${category}`];
+          delete migratedPayload[`names:4:domingo3:${category}`];
+        });
+        delete migratedPayload["date:4:domingo1"];
+        delete migratedPayload["date:4:domingo2"];
+        delete migratedPayload["date:4:domingo3"];
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(migratedPayload));
+        applyAutomaticDates(migratedPayload["date:0:quinta"] || DEFAULT_FIRST_QUINTA);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(readCalendarPayload()));
+        refreshNameOptions(migratedPayload);
+        updateCountSummaries();
+        updateSelectionAlerts(readCalendarPayload());
+      } catch (error) {
+        setStatus("Nao foi possivel carregar o calendario salvo.");
+      }
+    }
+
+    function clearCalendar() {
+      document.querySelectorAll("[data-type]").forEach((field) => {
+        if (field.type === "checkbox") {
+          field.checked = false;
+          return;
+        }
+
+        field.value = "";
+      });
+
+      localStorage.removeItem(STORAGE_KEY);
+      refreshNameOptions({});
+      updateCountSummaries();
+      updateSelectionAlerts({});
+      setStatus("Calendario limpo.");
+    }
+
+    function attachAutosave() {
+      document.querySelectorAll("[data-type]").forEach((field) => {
+        const saveHandler = () => {
+          if (field.dataset.type === "date" && field.dataset.week === "0" && field.dataset.day === "quinta") {
+            applyAutomaticDates(field.value || DEFAULT_FIRST_QUINTA);
+          }
+
+          saveCalendar("Calendario salvo automaticamente.");
+        };
+
+        field.addEventListener("input", saveHandler);
+        field.addEventListener("change", saveHandler);
+      });
+    }
+
+    function buildSheetsRows(payload) {
+      const rows = [];
+
+      WEEKS.forEach((weekLabel, weekIndex) => {
+        getVisibleDaysForWeek(weekIndex).forEach((day) => {
+          const date = payload[`date:${weekIndex}:${day.key}`] || "";
+          const row = {
+            semana: weekLabel,
+            dia: day.label,
+            data: date,
+          };
+
+          getCategoriesForDay(day.key).forEach((category) => {
+            row[category] = payload[`names:${weekIndex}:${day.key}:${category}`] || "";
+          });
+
+          rows.push(row);
+        });
+      });
+
+      return rows;
+    }
+
+    function exportToGoogleSheets() {
+      if (!GOOGLE_SHEETS_CONFIG.webAppUrl) {
+        setStatus(
+          "Configure o arquivo google-sheets-config.js com a URL do seu Web App do Google Apps Script.",
+        );
+        return;
+      }
+
+      const payload = readCalendarPayload();
+      const rows = buildSheetsRows(payload);
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = GOOGLE_SHEETS_CONFIG.webAppUrl;
+      form.target = "_blank";
+      form.style.display = "none";
+
+      const payloadInput = document.createElement("input");
+      payloadInput.type = "hidden";
+      payloadInput.name = "payload";
+      payloadInput.value = JSON.stringify({
+        exportedAt: new Date().toISOString(),
+        rows,
+        raw: payload,
+      });
+
+      form.appendChild(payloadInput);
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
+
+      setStatus("Envio iniciado para o Google Sheets.");
+      if (GOOGLE_SHEETS_CONFIG.spreadsheetUrl) {
+        window.open(GOOGLE_SHEETS_CONFIG.spreadsheetUrl, "_blank", "noopener");
+      }
+    }
+
+    buildCalendar();
+    applyAutomaticDates(DEFAULT_FIRST_QUINTA);
+    refreshNameOptions({});
+    updateSelectionAlerts({});
+    attachAutosave();
+    loadCalendar();
+    refreshNameOptions();
+    updateCountSummaries();
+    updateSelectionAlerts();
+
+    document.getElementById("saveBtn").addEventListener("click", saveCalendar);
+    document.getElementById("rerollBtn").addEventListener("click", rerollEmptySlots);
+    document.getElementById("exportSheetsBtn").addEventListener("click", exportToGoogleSheets);
+    document.getElementById("clearBtn").addEventListener("click", clearCalendar);
+  </script>
+</body>
+</html>
