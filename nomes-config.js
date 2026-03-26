@@ -10,35 +10,40 @@ window.PEOPLE_CONFIG = {
     categories: ["c1", "c2", "pc"],
     rules: {
       noConsecutiveWeeks: true,
-      maxTotal: null
+      maxTotal: null,
+      BlockedWeeks: [1],
     }
   },
   "Murilo": {
-    categories: ["c1", "pc"],
+    categories: ["c1", "c2",],
     rules: {
       noConsecutiveWeeks: true,
-      maxTotal: 2
+      maxTotal: 2,
+      BlockedWeeks: [1],
     }
   },
   "Ellen": {
     categories: ["c1", "c2"],
     rules: {
       noConsecutiveWeeks: true,
-      maxTotal: null
+      maxTotal: null,
+      BlockedDays: ["zs07"]
     }
   },
   "Victor": {
     categories: ["c1", "c2"],
     rules: {
       noConsecutiveWeeks: true,
-      maxTotal: null
+      maxTotal: null,
+      BlockedDays: ["zs07"]
     }
   },
   "Jp Souza": {
     categories: ["c1", "c2", "pc"],
     rules: {
       noConsecutiveWeeks: true,
-      maxTotal: null
+      maxTotal: null,
+      BlockedWeeks: [1],
     }
   },
   "Ana Clara": {
@@ -59,18 +64,21 @@ window.PEOPLE_CONFIG = {
     categories: ["c1", "c2"],
     rules: {
       noConsecutiveWeeks: true,
-      maxTotal: 2
+      maxTotal: 2,
+      BlockedWeeks: [1],
+      BlockedDays: ["Quinta"]
     }
   },
   "Lucas J": {
     categories: ["c1", "c2"],
     rules: {
       noConsecutiveWeeks: true,
-      maxTotal: null
+      maxTotal: null,
+      BlockedWeeks: [1],
     }
   },
   "Edu": {
-    categories: ["c1",],
+    categories: ["c1","c2"],
     rules: {
       noConsecutiveWeeks: true,
       maxTotal: null
@@ -80,7 +88,8 @@ window.PEOPLE_CONFIG = {
     categories: ["c2", "pc"],
     rules: {
       noConsecutiveWeeks: true,
-      maxTotal: null
+      maxTotal: null,
+      BlockedWeeks: [1],
     }
   },
   "Andrey": {
@@ -94,42 +103,61 @@ window.PEOPLE_CONFIG = {
     categories: ["c2", "pc"],
     rules: {
       noConsecutiveWeeks: true,
-      maxTotal: null
+      maxTotal: null,
+      
     }
   },
   "Sofia": {
     categories: ["c2", "pc"],
     rules: {
       noConsecutiveWeeks: true,
-      maxTotal: null
+      maxTotal: null,
+      BlockedWeeks: [1],
+      BlockedDays: ["Quinta"]
     }
   },
   "Paula": {
     categories: ["c2", "pc"],
     rules: {
       noConsecutiveWeeks: true,
-      maxTotal: null
+      maxTotal: null,
+      BlockedWeeks: [1],
     }
   },
   "Anna": {
     categories: ["c2", "pc"],
     rules: {
       noConsecutiveWeeks: true,
-      maxTotal: null
+      maxTotal: null,
+      blockedDays: ["Quinta"],
+      BlockedWeeks: [1],
     }
   },
   "Leo": {
     categories: ["c2", "pc"],
     rules: {
       noConsecutiveWeeks: true,
-      maxTotal: null
+      maxTotal: null,
+      BlockedWeeks: [1],
     }
   },
   "Vini": {
     categories: ["c2", "pc"],
     rules: {
       noConsecutiveWeeks: true,
-      maxTotal: null
+      maxTotal: null,
+      BlockedWeeks: [1],
     }
   }
 };
+
+Object.values(window.PEOPLE_CONFIG).forEach((person) => {
+  const categories = [...new Set(person.categories || [])].sort();
+  const onlyC2AndPc =
+    JSON.stringify(categories) === JSON.stringify(["c2", "pc"]);
+
+  if (onlyC2AndPc) {
+    person.categories = [...categories, "superv"];
+  }
+});
+
