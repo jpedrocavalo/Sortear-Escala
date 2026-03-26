@@ -122,7 +122,7 @@
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 18px;
     }
 
@@ -182,7 +182,7 @@
 
     .result-columns {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 14px;
     }
 
@@ -276,9 +276,9 @@
 <body>
   <main class="app">
     <section class="card intro">
-      <h1>Sorteio com 3 categorias</h1>
+      <h1>Sorteio por categoria</h1>
       <p>Os nomes sao carregados diretamente do codigo. Basta abrir o arquivo e clicar em gerar sorteio.</p>
-      <p class="hint">Edite a lista no arquivo <strong>nomes-config.js</strong>, cadastrando cada pessoa com suas categorias e regras. O sorteio preenche as 5 semanas do calendario: 5 quintas e 12 domingos por categoria. A Semana 5 fica so com quinta-feira. Cada nome precisa aparecer pelo menos 2 vezes no total do ciclo, somando todas as categorias em que ele existir, nao pode repetir dentro da mesma semana, e todo nome de PC precisa aparecer ao menos uma vez em PC.</p>
+      <p class="hint">Edite a lista no arquivo <strong>nomes-config.js</strong>, cadastrando cada pessoa com suas categorias e regras. O sorteio preenche as 5 semanas do calendario: 5 quintas para C1/C2/PC, 12 domingos para C1/C2/PC e 4 ZS07 para Superv. A Semana 5 fica so com quinta-feira. Cada nome precisa aparecer pelo menos 2 vezes no total do ciclo, somando todas as categorias em que ele existir, nao pode repetir dentro da mesma semana, e todo nome de PC precisa aparecer ao menos uma vez em PC.</p>
       <div class="controls">
         <button class="primary" id="sortearBtn" type="button">Gerar sorteio</button>
         <button class="secondary" id="limparBtn" type="button">Limpar resultados</button>
@@ -312,6 +312,14 @@
             <span class="counter" id="count-pc">0 nomes</span>
           </div>
           <textarea id="pc" readonly></textarea>
+        </article>
+
+        <article class="category">
+          <div class="category-header">
+            <h3>Superv</h3>
+            <span class="counter" id="count-superv">0 nomes</span>
+          </div>
+          <textarea id="superv" readonly></textarea>
         </article>
       </div>
     </section>
@@ -354,16 +362,19 @@
 
   <script src="./nomes-config.js"></script>
   <script>
-    const CATEGORY_IDS = ["c1", "c2", "pc"];
+    const BASE_CATEGORY_IDS = ["c1", "c2", "pc"];
+    const EXTRA_SUNDAY1_CATEGORY_IDS = ["superv"];
+    const CATEGORY_IDS = [...BASE_CATEGORY_IDS, ...EXTRA_SUNDAY1_CATEGORY_IDS];
     const DAY_RULES = {
       quinta: 5,
       domingo: 12,
+      domingo1Superv: 4,
     };
     const DRAW_STORAGE_KEY = "sorteio-resultado-v1";
     const CALENDAR_STORAGE_KEY = "calendario-escala-v1";
     const SOURCE_NAMES_STORAGE_KEY = "sorteio-categorias-v1";
     const CALENDAR_WEEK_COUNT = 5;
-    const CALENDAR_CATEGORY_LABELS = ["C1", "C2", "PC"];
+    const CALENDAR_CATEGORY_LABELS = ["C1", "C2", "PC", "Superv"];
     const CALENDAR_DAY_KEYS = ["quinta", "domingo1", "domingo2", "domingo3"];
 
     const PEOPLE_CONFIG = window.PEOPLE_CONFIG || {};
@@ -372,10 +383,49 @@
       c1: "C1",
       c2: "C2",
       pc: "PC",
+      superv: "Superv",
     };
 
+    function getPersonRules(name) {
+      return PEOPLE_CONFIG[name]?.rules || {};
+    }
+
+    function normalizeBlockedDay(day) {
+      const value = String(day || "").trim().toLowerCase();
+      const aliases = {
+        quinta: "quinta",
+        domingo1: "domingo1",
+        domingo2: "domingo2",
+        domingo3: "domingo3",
+        zs07: "domingo1",
+        zs10: "domingo2",
+        zs16: "domingo3",
+      };
+
+      return aliases[value] || value;
+    }
+
+    function isBlockedForWeek(name, weekIndex) {
+      const blockedWeeks = getPersonRules(name).blockedWeeks;
+      return Array.isArray(blockedWeeks) && blockedWeeks.includes(weekIndex + 1);
+    }
+
+    function isBlockedForDay(name, dayKey) {
+      const blockedDays = getPersonRules(name).blockedDays;
+      if (!Array.isArray(blockedDays)) {
+        return false;
+      }
+
+      const normalizedDayKey = normalizeBlockedDay(dayKey);
+      return blockedDays.some((day) => normalizeBlockedDay(day) === normalizedDayKey);
+    }
+
+    function isBlockedForSlot(name, slot) {
+      return isBlockedForWeek(name, slot.weekIndex) || isBlockedForDay(name, slot.dayKey);
+    }
+
     function buildCategoriesFromPeopleConfig() {
-      const categories = { c1: [], c2: [], pc: [] };
+      const categories = { c1: [], c2: [], pc: [], superv: [] };
 
       Object.entries(PEOPLE_CONFIG).forEach(([name, config]) => {
         const categoriesForPerson = Array.isArray(config?.categories) ? config.categories : [];
@@ -458,13 +508,13 @@
       return article;
     }
 
-    function renderDay(containerId, results) {
+    function renderDay(containerId, results, categoryIds) {
       const container = document.getElementById(containerId);
       container.innerHTML = "";
 
-      CATEGORY_IDS.forEach((categoryId) => {
+      categoryIds.forEach((categoryId) => {
         container.appendChild(
-          createCategoryResult(labels[categoryId], results[categoryId])
+          createCategoryResult(labels[categoryId], results[categoryId] || [])
         );
       });
     }
@@ -590,8 +640,8 @@
         return;
       }
 
-      renderDay("quinta-output", storedDraw.results.quinta);
-      renderDay("domingo-output", storedDraw.results.domingo);
+      renderDay("quinta-output", storedDraw.results.quinta, BASE_CATEGORY_IDS);
+      renderDay("domingo-output", storedDraw.results.domingo, CATEGORY_IDS);
 
       const quintaCounts = countOccurrences(storedDraw.results.quinta);
       const domingoCounts = countOccurrences(storedDraw.results.domingo);
@@ -604,7 +654,8 @@
       const calendarData = loadJsonStorage(CALENDAR_STORAGE_KEY) || {};
 
       for (let weekIndex = 0; weekIndex < CALENDAR_WEEK_COUNT; weekIndex += 1) {
-        CALENDAR_CATEGORY_LABELS.forEach((categoryLabel) => {
+        BASE_CATEGORY_IDS.forEach((categoryId) => {
+          const categoryLabel = labels[categoryId];
           calendarData[`names:${weekIndex}:quinta:${categoryLabel}`] = "";
           if (weekIndex < 4) {
             calendarData[`names:${weekIndex}:domingo1:${categoryLabel}`] = "";
@@ -616,9 +667,15 @@
             delete calendarData[`names:${weekIndex}:domingo3:${categoryLabel}`];
           }
         });
+
+        if (weekIndex < 4) {
+          calendarData[`names:${weekIndex}:domingo1:Superv`] = "";
+        } else {
+          delete calendarData[`names:${weekIndex}:domingo1:Superv`];
+        }
       }
 
-      CATEGORY_IDS.forEach((categoryId) => {
+      BASE_CATEGORY_IDS.forEach((categoryId) => {
         const categoryLabel = labels[categoryId];
         (results.quinta[categoryId] || []).forEach((name, index) => {
           if (index < CALENDAR_WEEK_COUNT) {
@@ -633,6 +690,12 @@
             calendarData[`names:${weekIndex}:${sundaySlot}:${categoryLabel}`] = name;
           }
         });
+      });
+
+      (results.domingo.superv || []).forEach((name, weekIndex) => {
+        if (weekIndex < 4) {
+          calendarData[`names:${weekIndex}:domingo1:Superv`] = name;
+        }
       });
 
       saveJsonStorage(CALENDAR_STORAGE_KEY, calendarData);
@@ -683,10 +746,11 @@
 
     function validate(categories) {
       const minimumAmount = DAY_RULES.quinta;
-      const totalSlots = (DAY_RULES.quinta + DAY_RULES.domingo) * CATEGORY_IDS.length;
+      const totalSlots = (DAY_RULES.quinta + DAY_RULES.domingo) * BASE_CATEGORY_IDS.length
+        + DAY_RULES.domingo1Superv;
       const uniqueNames = new Set();
 
-      for (const categoryId of CATEGORY_IDS) {
+      for (const categoryId of BASE_CATEGORY_IDS) {
         if (categories[categoryId].length < minimumAmount) {
           throw new Error(
             `${labels[categoryId]} precisa ter pelo menos ${minimumAmount} nomes diferentes para preencher as 5 quintas sem repeticao.`
@@ -709,6 +773,51 @@
           `PC tem ${categories.pc.length} nomes, mas so existem ${DAY_RULES.quinta + DAY_RULES.domingo} vagas de PC no ciclo.`
         );
       }
+
+      if (categories.superv.length === 0) {
+        throw new Error(
+          "Superv precisa ter pelo menos 1 nome para preencher todos os ZS07."
+        );
+      }
+
+      for (let weekIndex = 0; weekIndex < CALENDAR_WEEK_COUNT; weekIndex += 1) {
+        BASE_CATEGORY_IDS.forEach((categoryId) => {
+          const availableNames = categories[categoryId].filter(
+            (name) => !isBlockedForWeek(name, weekIndex)
+          );
+
+          if (availableNames.length === 0) {
+            throw new Error(
+              `${labels[categoryId]} nao tem nenhum nome disponivel para a Semana ${weekIndex + 1}.`
+            );
+          }
+        });
+
+        if (weekIndex < 4) {
+          const availableSuperv = categories.superv.filter(
+            (name) => !isBlockedForWeek(name, weekIndex)
+          );
+
+          if (availableSuperv.length === 0) {
+            throw new Error(
+              `Superv nao tem nenhum nome disponivel para o ZS07 da Semana ${weekIndex + 1}.`
+            );
+          }
+        }
+      }
+
+      const slots = buildCalendarSlots();
+      slots.forEach((slot) => {
+        const availableForSlot = categories[slot.categoryId].filter(
+          (name) => !isBlockedForSlot(name, slot)
+        );
+
+        if (availableForSlot.length === 0) {
+          throw new Error(
+            `${labels[slot.categoryId]} nao tem nenhum nome disponivel para ${slot.dayKey} na Semana ${slot.weekIndex + 1}.`
+          );
+        }
+      });
     }
 
     function buildNameAvailability(categories) {
@@ -765,7 +874,7 @@
       const slots = [];
 
       for (let weekIndex = 0; weekIndex < CALENDAR_WEEK_COUNT; weekIndex += 1) {
-        CATEGORY_IDS.forEach((categoryId) => {
+        BASE_CATEGORY_IDS.forEach((categoryId) => {
           slots.push({
             weekIndex,
             dayKey: "quinta",
@@ -777,7 +886,7 @@
 
         if (weekIndex < 4) {
           for (let sundayIndex = 0; sundayIndex < 3; sundayIndex += 1) {
-            CATEGORY_IDS.forEach((categoryId) => {
+            BASE_CATEGORY_IDS.forEach((categoryId) => {
               slots.push({
                 weekIndex,
                 dayKey: `domingo${sundayIndex + 1}`,
@@ -786,6 +895,16 @@
                 index: (weekIndex * 3) + sundayIndex,
               });
             });
+
+            if (sundayIndex === 0) {
+              slots.push({
+                weekIndex,
+                dayKey: "domingo1",
+                categoryId: "superv",
+                target: "domingo",
+                index: weekIndex,
+              });
+            }
           }
         }
       }
@@ -796,7 +915,7 @@
     function getWeekNames(results, weekIndex) {
       const weekNames = new Set();
 
-      CATEGORY_IDS.forEach((categoryId) => {
+      BASE_CATEGORY_IDS.forEach((categoryId) => {
         const quintaName = results.quinta[categoryId][weekIndex];
         if (quintaName) {
           weekNames.add(quintaName);
@@ -811,6 +930,13 @@
           }
         }
       });
+
+      if (weekIndex < 4) {
+        const supervName = results.domingo.superv[weekIndex];
+        if (supervName) {
+          weekNames.add(supervName);
+        }
+      }
 
       return weekNames;
     }
@@ -839,6 +965,10 @@
 
           for (const slot of slots) {
             if (slot.categoryId !== "pc") {
+              continue;
+            }
+
+            if (isBlockedForSlot(name, slot)) {
               continue;
             }
 
@@ -883,6 +1013,10 @@
               continue;
             }
 
+            if (isBlockedForSlot(name, slot)) {
+              continue;
+            }
+
             const currentName = results[slot.target][slot.categoryId][slot.index];
             if (!currentName || currentName === name || (globalCounts.get(currentName) || 0) <= 2) {
               continue;
@@ -919,13 +1053,18 @@
       const randomOrder = createRandomOrder(categories);
       const slots = buildCalendarSlots();
       const results = {
-        quinta: Object.fromEntries(CATEGORY_IDS.map((categoryId) => [categoryId, Array(5).fill("")])),
-        domingo: Object.fromEntries(CATEGORY_IDS.map((categoryId) => [categoryId, Array(12).fill("")])),
+        quinta: Object.fromEntries(BASE_CATEGORY_IDS.map((categoryId) => [categoryId, Array(5).fill("")])),
+        domingo: {
+          ...Object.fromEntries(BASE_CATEGORY_IDS.map((categoryId) => [categoryId, Array(12).fill("")])),
+          superv: Array(4).fill(""),
+        },
       };
 
       slots.forEach((slot) => {
         const weekNames = getWeekNames(results, slot.weekIndex);
-        let candidates = categories[slot.categoryId].filter((name) => !weekNames.has(name));
+        let candidates = categories[slot.categoryId].filter(
+          (name) => !weekNames.has(name) && !isBlockedForSlot(name, slot)
+        );
 
         if (slot.categoryId === "pc") {
           const missingPcCandidates = candidates.filter(
@@ -980,8 +1119,8 @@
         const results = drawResults(categories);
         const assignedWeek = pushResultsToCalendar(results);
         saveDraw(results, assignedWeek);
-        renderDay("quinta-output", results.quinta);
-        renderDay("domingo-output", results.domingo);
+        renderDay("quinta-output", results.quinta, BASE_CATEGORY_IDS);
+        renderDay("domingo-output", results.domingo, CATEGORY_IDS);
         renderCalendarSummaries();
 
         setStatus(
