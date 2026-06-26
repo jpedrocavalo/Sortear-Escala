@@ -28,7 +28,7 @@ window.PEOPLE_CONFIG = {
     rules: {
       noConsecutiveWeeks: true,
       maxTotal: null,
-      blockedDays: ["zs07"]
+      blockedDays: ["zs07", "quinta"]
     }
   },
   "Victor": {
@@ -37,7 +37,7 @@ window.PEOPLE_CONFIG = {
     rules: {
       noConsecutiveWeeks: true,
       maxTotal: null,
-      blockedDays: ["zs07"]
+      blockedDays: ["zs07", "quinta"]
     }
   },
   "Jp Souza": {

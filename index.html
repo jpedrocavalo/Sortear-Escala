@@ -993,16 +993,29 @@
       }
 
       // Victor + Ellen: par fixo, 2 vezes no ciclo, sempre no mesmo culto (C2+PC ou C2+C1).
-      // Colocados em quintas: garante que nunca caem juntos num domingo (ex.: 26/07).
+      // So em ZS10/ZS16 (bloqueados em quinta e ZS07). Evita a semana do domingo 26/07.
+      const PAIR_EXCLUDE_WEEK = 3; // Semana 4 = domingo 26/07 (par nao fica junto nela)
       const pairNames = ["Victor", "Ellen"].filter(isActiveName);
       if (pairNames.length === 2) {
         const combos = [["c2", "pc"], ["c2", "c1"]];
-        shuffle([0, 1, 2, 3, 4]).slice(0, 2).forEach((weekIndex, i) => {
-          const [catA, catB] = combos[i];
-          const order = shuffle([...pairNames]);
-          place("quinta", catA, weekIndex, order[0]);
-          place("quinta", catB, weekIndex, order[1]);
-        });
+        const weekPool = shuffle(
+          [0, 1, 2, 3].filter((weekIndex) => weekIndex !== PAIR_EXCLUDE_WEEK)
+        );
+        let comboIndex = 0;
+        for (const weekIndex of weekPool) {
+          if (comboIndex >= combos.length) break;
+          const [catA, catB] = combos[comboIndex];
+          const sundayOrder = shuffle([1, 2]).find((order) => {
+            const slotIndex = (weekIndex * 3) + order;
+            return !results.domingo[catA][slotIndex] && !results.domingo[catB][slotIndex];
+          });
+          if (sundayOrder === undefined) continue;
+          const slotIndex = (weekIndex * 3) + sundayOrder;
+          const who = shuffle([...pairNames]);
+          place("domingo", catA, slotIndex, who[0]);
+          place("domingo", catB, slotIndex, who[1]);
+          comboIndex += 1;
+        }
       }
 
       // Romildo: exatamente 2 quintas, nunca domingo.
