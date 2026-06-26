@@ -734,60 +734,11 @@
     }
 
     function validate(categories) {
-      const minimumAmount = DAY_RULES.quinta;
-      const totalSlots = (DAY_RULES.quinta + DAY_RULES.domingo) * BASE_CATEGORY_IDS.length;
-      const uniqueNames = new Set();
-
-      for (const categoryId of BASE_CATEGORY_IDS) {
-        if (categories[categoryId].length < minimumAmount) {
-          throw new Error(
-            `${labels[categoryId]} precisa ter pelo menos ${minimumAmount} nomes diferentes para preencher as 5 quintas sem repeticao.`
-          );
-        }
+      // Sem regras de quantidade: so confere que ha alguem cadastrado.
+      const hasAnyone = CATEGORY_IDS.some((categoryId) => categories[categoryId].length > 0);
+      if (!hasAnyone) {
+        throw new Error("Nenhum nome cadastrado para sortear.");
       }
-
-      CATEGORY_IDS.forEach((categoryId) => {
-        categories[categoryId].forEach((name) => uniqueNames.add(name));
-      });
-
-      if (uniqueNames.size * 2 > totalSlots) {
-        throw new Error(
-          `Ha ${uniqueNames.size} nomes unicos no total. Para cada um aparecer pelo menos 2 vezes, o maximo e ${Math.floor(totalSlots / 2)} nomes unicos.`
-        );
-      }
-
-      if (categories.pc.length > DAY_RULES.quinta + DAY_RULES.domingo) {
-        throw new Error(
-          `PC tem ${categories.pc.length} nomes, mas so existem ${DAY_RULES.quinta + DAY_RULES.domingo} vagas de PC no ciclo.`
-        );
-      }
-
-      for (let weekIndex = 0; weekIndex < CALENDAR_WEEK_COUNT; weekIndex += 1) {
-        BASE_CATEGORY_IDS.forEach((categoryId) => {
-          const availableNames = categories[categoryId].filter(
-            (name) => !isBlockedForWeek(name, weekIndex)
-          );
-
-          if (availableNames.length === 0) {
-            throw new Error(
-              `${labels[categoryId]} nao tem nenhum nome disponivel para a Semana ${weekIndex + 1}.`
-            );
-          }
-        });
-      }
-
-      const slots = buildCalendarSlots();
-      slots.forEach((slot) => {
-        const availableForSlot = categories[slot.categoryId].filter(
-          (name) => !isBlockedForSlot(name, slot)
-        );
-
-        if (availableForSlot.length === 0) {
-          throw new Error(
-            `${labels[slot.categoryId]} nao tem nenhum nome disponivel para ${slot.dayKey} na Semana ${slot.weekIndex + 1}.`
-          );
-        }
-      });
     }
 
     function buildNameAvailability(categories) {
@@ -911,142 +862,174 @@
       );
     }
 
-    function ensurePcCoverage(results, slots, globalCounts, categoryCounts, categories) {
-      categories.pc.forEach((name) => {
-        while ((categoryCounts.pc.get(name) || 0) < 1) {
-          let replaced = false;
+    const NO_THURSDAY_ON_WEEKS = [1, 3]; // Semanas 2 e 4 (indices)
 
-          for (const slot of slots) {
-            if (slot.categoryId !== "pc") {
-              continue;
-            }
-
-            if (isBlockedForSlot(name, slot)) {
-              continue;
-            }
-
-            const currentName = results[slot.target][slot.categoryId][slot.index];
-            if (!currentName || currentName === name || (categoryCounts.pc.get(currentName) || 0) <= 1) {
-              continue;
-            }
-
-            const weekNames = getWeekNames(results, slot.weekIndex);
-            weekNames.delete(currentName);
-            if (weekNames.has(name)) {
-              continue;
-            }
-
-            assignToSlot(results, slot, name);
-            incrementCategoryCount(categoryCounts, "pc", name, 1);
-            incrementCategoryCount(categoryCounts, "pc", currentName, -1);
-            globalCounts.set(name, (globalCounts.get(name) || 0) + 1);
-            globalCounts.set(currentName, globalCounts.get(currentName) - 1);
-            replaced = true;
-            break;
-          }
-
-          if (!replaced) {
-            throw new Error(
-              `Nao foi possivel fazer ${name} aparecer em PC sem repetir nomes na mesma semana.`
-            );
-          }
-        }
-      });
+    function personCategories(name) {
+      return new Set(PEOPLE_CONFIG[name]?.categories || []);
     }
 
-    function ensureMinimumCounts(results, slots, globalCounts, availability, categoryCounts) {
-      const uniqueNames = [...availability.keys()];
+    function isActiveName(name) {
+      return PEOPLE_CONFIG[name]?.active !== false;
+    }
 
-      uniqueNames.forEach((name) => {
-        while ((globalCounts.get(name) || 0) < 2) {
-          let replaced = false;
+    function sameCategorySet(cats, expected) {
+      return cats.size === expected.length && expected.every((category) => cats.has(category));
+    }
 
-          for (const slot of slots) {
-            if (!availability.get(name).has(slot.categoryId)) {
-              continue;
-            }
+    function classifyPerson(name) {
+      if (name === "Romildo") return "romildo";
+      const cats = personCategories(name);
+      if (sameCategorySet(cats, ["c1"])) return "pureC1";
+      if (sameCategorySet(cats, ["c1", "c2"])) return "c1c2";
+      if (sameCategorySet(cats, ["c1", "c2", "pc"])) return "c1c2pc";
+      if (sameCategorySet(cats, ["c2", "pc", "coord"])) return "c2pccoord";
+      return "other";
+    }
 
-            if (isBlockedForSlot(name, slot)) {
-              continue;
-            }
-
-            const currentName = results[slot.target][slot.categoryId][slot.index];
-            if (!currentName || currentName === name || (globalCounts.get(currentName) || 0) <= 2) {
-              continue;
-            }
-
-            const weekNames = getWeekNames(results, slot.weekIndex);
-            weekNames.delete(currentName);
-            if (weekNames.has(name)) {
-              continue;
-            }
-
-            assignToSlot(results, slot, name);
-            incrementCategoryCount(categoryCounts, slot.categoryId, name, 1);
-            incrementCategoryCount(categoryCounts, slot.categoryId, currentName, -1);
-            globalCounts.set(name, (globalCounts.get(name) || 0) + 1);
-            globalCounts.set(currentName, globalCounts.get(currentName) - 1);
-            replaced = true;
-            break;
-          }
-
-          if (!replaced) {
-            throw new Error(
-              `Nao foi possivel garantir 2 aparicoes para ${name} sem repetir nomes dentro da mesma semana.`
-            );
-          }
+    function pickLeastUsed(candidates, globalCounts, randomOrder) {
+      return [...candidates].sort((left, right) => {
+        const leftCount = globalCounts.get(left) || 0;
+        const rightCount = globalCounts.get(right) || 0;
+        if (leftCount !== rightCount) {
+          return leftCount - rightCount;
         }
-      });
+        return (randomOrder.get(left) || 0) - (randomOrder.get(right) || 0);
+      })[0];
     }
 
     function buildBalancedGlobalSchedule(categories) {
-      const availability = buildNameAvailability(categories);
-      const globalCounts = new Map([...availability.keys()].map((name) => [name, 0]));
+      const activeNames = Object.keys(PEOPLE_CONFIG).filter(isActiveName);
+      const globalCounts = new Map(activeNames.map((name) => [name, 0]));
       const categoryCounts = createCategoryCounts();
-      const randomOrder = createRandomOrder(categories);
-      const slots = buildCalendarSlots();
+      const randomOrder = new Map(
+        shuffle([...activeNames]).map((name, index) => [name, index])
+      );
       const results = {
         quinta: Object.fromEntries(BASE_CATEGORY_IDS.map((categoryId) => [categoryId, Array(5).fill("")])),
-        domingo: {
-          ...Object.fromEntries(BASE_CATEGORY_IDS.map((categoryId) => [categoryId, Array(12).fill("")])),
-        },
+        domingo: Object.fromEntries(BASE_CATEGORY_IDS.map((categoryId) => [categoryId, Array(12).fill("")])),
       };
 
-      slots.forEach((slot) => {
-        const weekNames = getWeekNames(results, slot.weekIndex);
-        let candidates = categories[slot.categoryId].filter(
-          (name) => !weekNames.has(name) && !isBlockedForSlot(name, slot)
-        );
+      const sundaySlot = (weekIndex, order) => (weekIndex * 3) + order;
+      const place = (target, categoryId, index, name) => {
+        if (!name || results[target][categoryId][index]) return;
+        results[target][categoryId][index] = name;
+        incrementCategoryCount(categoryCounts, categoryId, name, 1);
+        globalCounts.set(name, (globalCounts.get(name) || 0) + 1);
+      };
 
-        if (slot.categoryId === "pc") {
-          const missingPcCandidates = candidates.filter(
-            (name) => (categoryCounts.pc.get(name) || 0) < 1
-          );
-          if (missingPcCandidates.length > 0) {
-            candidates = missingPcCandidates;
-          }
-        }
-
-        if (candidates.length === 0) {
-          throw new Error(
-            `Nao foi possivel montar a Semana ${slot.weekIndex + 1} sem repetir nomes na mesma semana. Ajuste as categorias.`
-          );
-        }
-
-        const chosenName = pickBestCandidate(
-          candidates,
-          globalCounts,
-          availability,
-          randomOrder
-        );
-
-        assignToSlot(results, slot, chosenName);
-        incrementCategoryCount(categoryCounts, slot.categoryId, chosenName, 1);
-        globalCounts.set(chosenName, (globalCounts.get(chosenName) || 0) + 1);
+      // FASE A - Regra 3: Maria L, Sofia e Anna nas Semanas 2 e 4 (ZS07 + ZS10 do mesmo domingo).
+      // Categorias distintas no ZS07 para as tres caberem no mesmo culto.
+      const trioPlan = {
+        "Maria L": { zs07: "c2", zs10: "c1" },
+        "Sofia": { zs07: "pc", zs10: "coord" },
+        "Anna": { zs07: "coord", zs10: "pc" },
+      };
+      NO_THURSDAY_ON_WEEKS.forEach((weekIndex) => {
+        Object.entries(trioPlan).forEach(([name, plan]) => {
+          if (!isActiveName(name)) return;
+          place("domingo", plan.zs07, sundaySlot(weekIndex, 0), name);
+          place("domingo", plan.zs10, sundaySlot(weekIndex, 1), name);
+        });
       });
 
-      ensurePcCoverage(results, slots, globalCounts, categoryCounts, categories);
-      ensureMinimumCounts(results, slots, globalCounts, availability, categoryCounts);
+      // FASE B - C1 fixo no ZS07 (Deborah, Arthur, Pedro G., Sam I): um por semana.
+      const pureC1People = shuffle(
+        activeNames.filter((name) => classifyPerson(name) === "pureC1")
+      );
+      shuffle([0, 1, 2, 3]).forEach((weekIndex, position) => {
+        place("domingo", "c1", sundaySlot(weekIndex, 0), pureC1People[position]);
+      });
+
+      // FASE C - extras condicionais.
+      // Deborah +1 em C1 num culto (ZS10/ZS16) onde Jp Souza esteja no PC.
+      if (isActiveName("Deborah") && isActiveName("Jp Souza")) {
+        for (let weekIndex = 0; weekIndex < 4 && (categoryCounts.c1.get("Deborah") || 0) < 2; weekIndex += 1) {
+          for (const order of [1, 2]) {
+            const index = sundaySlot(weekIndex, order);
+            const weekNames = getWeekNames(results, weekIndex);
+            const jpSlot = { weekIndex, dayKey: `domingo${order + 1}` };
+            if (
+              !results.domingo.c1[index] &&
+              !results.domingo.pc[index] &&
+              !weekNames.has("Deborah") &&
+              !weekNames.has("Jp Souza") &&
+              !isBlockedForSlot("Jp Souza", jpSlot)
+            ) {
+              place("domingo", "pc", index, "Jp Souza");
+              place("domingo", "c1", index, "Deborah");
+              break;
+            }
+          }
+        }
+      }
+
+      // Pedro G. +1 em C1 em outro horario (quinta/ZS10/ZS16).
+      if (isActiveName("Pedro G.")) {
+        const extraC1Slots = buildCalendarSlots().filter(
+          (slot) => slot.categoryId === "c1" && slot.dayKey !== "domingo1"
+        );
+        for (const slot of extraC1Slots) {
+          if ((categoryCounts.c1.get("Pedro G.") || 0) >= 2) break;
+          const weekNames = getWeekNames(results, slot.weekIndex);
+          if (
+            !results[slot.target].c1[slot.index] &&
+            !weekNames.has("Pedro G.") &&
+            !isBlockedForSlot("Pedro G.", slot)
+          ) {
+            place(slot.target, "c1", slot.index, "Pedro G.");
+            break;
+          }
+        }
+      }
+
+      // FASE D - preenchimento balanceado do restante.
+      const excludedFromGeneral = new Set([
+        "Maria L", "Sofia", "Anna",
+        ...activeNames.filter((name) => classifyPerson(name) === "pureC1"),
+      ]);
+      const generalPool = activeNames.filter((name) => !excludedFromGeneral.has(name));
+
+      const eligibleForGeneral = (name, slot) => {
+        if (isBlockedForSlot(name, slot)) return false;
+        const group = classifyPerson(name);
+        const cat = slot.categoryId;
+        if (group === "romildo") return cat === "c1";
+        if (group === "c1c2") return cat === "c2";
+        if (group === "c1c2pc") return cat === "c1" || cat === "c2" || cat === "pc";
+        if (group === "c2pccoord") return cat === "c2" || cat === "pc" || cat === "coord";
+        return false;
+      };
+
+      const orderedSlots = buildCalendarSlots().slice().sort((left, right) => {
+        const priority = (slot) =>
+          slot.dayKey === "domingo1" && slot.categoryId === "c2" ? 0 : 1;
+        return priority(left) - priority(right);
+      });
+
+      orderedSlots.forEach((slot) => {
+        if (results[slot.target][slot.categoryId][slot.index]) return;
+        const weekNames = getWeekNames(results, slot.weekIndex);
+        let candidates = generalPool.filter(
+          (name) => eligibleForGeneral(name, slot) && !weekNames.has(name)
+        );
+
+        // C2 no ZS07: prioridade para o grupo C1+C2 antes de transbordar.
+        if (slot.dayKey === "domingo1" && slot.categoryId === "c2") {
+          const priorityCandidates = candidates.filter(
+            (name) => classifyPerson(name) === "c1c2"
+          );
+          if (priorityCandidates.length > 0) candidates = priorityCandidates;
+        }
+
+        if (candidates.length === 0) return;
+        place(
+          slot.target,
+          slot.categoryId,
+          slot.index,
+          pickLeastUsed(candidates, globalCounts, randomOrder)
+        );
+      });
+
       return results;
     }
 

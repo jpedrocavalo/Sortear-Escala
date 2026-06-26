@@ -11,7 +11,7 @@ window.PEOPLE_CONFIG = {
     rules: {
       noConsecutiveWeeks: true,
       maxTotal: null,
-      BlockedWeeks: [1],
+      blockedWeeks: [1],
     }
   },
   "Murilo": {
@@ -19,7 +19,7 @@ window.PEOPLE_CONFIG = {
     rules: {
       noConsecutiveWeeks: true,
       maxTotal: 2,
-      BlockedWeeks: [1],
+      blockedWeeks: [1],
     }
   },
   "Ellen": {
@@ -27,7 +27,7 @@ window.PEOPLE_CONFIG = {
     rules: {
       noConsecutiveWeeks: true,
       maxTotal: null,
-      BlockedDays: ["zs07"]
+      blockedDays: ["zs07"]
     }
   },
   "Victor": {
@@ -35,7 +35,7 @@ window.PEOPLE_CONFIG = {
     rules: {
       noConsecutiveWeeks: true,
       maxTotal: null,
-      BlockedDays: ["zs07"]
+      blockedDays: ["zs07"]
     }
   },
   "Jp Souza": {
@@ -43,7 +43,7 @@ window.PEOPLE_CONFIG = {
     rules: {
       noConsecutiveWeeks: true,
       maxTotal: null,
-      BlockedWeeks: [1],
+      blockedWeeks: [1],
     }
   },
   "Ana Clara": {
@@ -65,8 +65,8 @@ window.PEOPLE_CONFIG = {
     rules: {
       noConsecutiveWeeks: true,
       maxTotal: 2,
-      BlockedWeeks: [1],
-      BlockedDays: ["Quinta"]
+      blockedWeeks: [1],
+      blockedDays: ["Quinta"]
     }
   },
   "Lucas J": {
@@ -74,7 +74,7 @@ window.PEOPLE_CONFIG = {
     rules: {
       noConsecutiveWeeks: true,
       maxTotal: null,
-      BlockedWeeks: [1],
+      blockedWeeks: [1],
     }
   },
   "Joao P": {
@@ -82,7 +82,7 @@ window.PEOPLE_CONFIG = {
     rules: {
       noConsecutiveWeeks: true,
       maxTotal: null,
-      BlockedWeeks: [1],
+      blockedWeeks: [1],
     }
   },
   "Andrey": {
@@ -104,8 +104,8 @@ window.PEOPLE_CONFIG = {
     rules: {
       noConsecutiveWeeks: true,
       maxTotal: null,
-      BlockedWeeks: [1],
-      BlockedDays: ["Quinta"]
+      blockedWeeks: [1],
+      blockedDays: ["Quinta"]
     }
   },
   "Paula": {
@@ -114,7 +114,7 @@ window.PEOPLE_CONFIG = {
     rules: {
       noConsecutiveWeeks: true,
       maxTotal: null,
-      BlockedWeeks: [1],
+      blockedWeeks: [1],
     }
   },
   "Anna": {
@@ -123,7 +123,7 @@ window.PEOPLE_CONFIG = {
       noConsecutiveWeeks: true,
       maxTotal: null,
       blockedDays: ["Quinta"],
-      BlockedWeeks: [1],
+      blockedWeeks: [1],
     }
   },
   "Vini": {
@@ -131,7 +131,7 @@ window.PEOPLE_CONFIG = {
     rules: {
       noConsecutiveWeeks: true,
       maxTotal: null,
-      BlockedWeeks: [1],
+      blockedWeeks: [1],
     }
   },
   "Sam I": {
