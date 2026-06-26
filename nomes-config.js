@@ -1,6 +1,6 @@
 window.PEOPLE_CONFIG = {
   "Lucas V": {
-    categories: ["c1", "c2"],
+    categories: ["c1", "c2", "pc"],
     rules: {
       noConsecutiveWeeks: true,
       maxTotal: null
@@ -23,7 +23,7 @@ window.PEOPLE_CONFIG = {
     }
   },
   "Ellen": {
-    categories: ["c1", "c2"],
+    categories: ["c2", "pc"],
     rules: {
       noConsecutiveWeeks: true,
       maxTotal: null,
@@ -31,7 +31,7 @@ window.PEOPLE_CONFIG = {
     }
   },
   "Victor": {
-    categories: ["c1", "c2"],
+    categories: ["c2", "pc"],
     rules: {
       noConsecutiveWeeks: true,
       maxTotal: null,
@@ -39,7 +39,7 @@ window.PEOPLE_CONFIG = {
     }
   },
   "Jp Souza": {
-    categories: ["c1", "c2", "pc"],
+    categories: ["c2", "pc"],
     rules: {
       noConsecutiveWeeks: true,
       maxTotal: null,
@@ -77,13 +77,6 @@ window.PEOPLE_CONFIG = {
       BlockedWeeks: [1],
     }
   },
-  "Edu": {
-    categories: ["c1","c2"],
-    rules: {
-      noConsecutiveWeeks: true,
-      maxTotal: null
-    }
-  },
   "Joao P": {
     categories: ["c2", "pc"],
     rules: {
@@ -104,7 +97,6 @@ window.PEOPLE_CONFIG = {
     rules: {
       noConsecutiveWeeks: true,
       maxTotal: null,
-      
     }
   },
   "Sofia": {
@@ -117,6 +109,7 @@ window.PEOPLE_CONFIG = {
     }
   },
   "Paula": {
+    active: false,
     categories: ["c2", "pc"],
     rules: {
       noConsecutiveWeeks: true,
@@ -133,7 +126,7 @@ window.PEOPLE_CONFIG = {
       BlockedWeeks: [1],
     }
   },
-  "Leo": {
+  "Vini": {
     categories: ["c2", "pc"],
     rules: {
       noConsecutiveWeeks: true,
@@ -141,12 +134,39 @@ window.PEOPLE_CONFIG = {
       BlockedWeeks: [1],
     }
   },
-  "Vini": {
-    categories: ["c2", "pc"],
+  "Sam I": {
+    categories: ["c1"],
     rules: {
       noConsecutiveWeeks: true,
-      maxTotal: null,
-      BlockedWeeks: [1],
+      maxTotal: null
+    }
+  },
+  "Romildo": {
+    categories: ["c1"],
+    rules: {
+      noConsecutiveWeeks: true,
+      maxTotal: null
+    }
+  },
+  "Pedro G.": {
+    categories: ["c1"],
+    rules: {
+      noConsecutiveWeeks: true,
+      maxTotal: null
+    }
+  },
+  "Arthur": {
+    categories: ["c1"],
+    rules: {
+      noConsecutiveWeeks: true,
+      maxTotal: null
+    }
+  },
+  "Deborah": {
+    categories: ["c1"],
+    rules: {
+      noConsecutiveWeeks: true,
+      maxTotal: null
     }
   }
 };
@@ -157,6 +177,6 @@ Object.values(window.PEOPLE_CONFIG).forEach((person) => {
     JSON.stringify(categories) === JSON.stringify(["c2", "pc"]);
 
   if (onlyC2AndPc) {
-    person.categories = [...categories, "superv"];
+    person.categories = [...categories, "coord"];
   }
 });

@@ -418,7 +418,7 @@
   <main class="app">
     <section class="card header">
       <h1>Calendario de escala</h1>
-      <p>Organize os nomes por semana com espaco para 3 categorias na quinta-feira, para C1/C2/PC em todos os domingos e para Superv apenas no ZS07 das Semanas 1 a 4. A Semana 5 fica so com quinta-feira.</p>
+      <p>Organize os nomes por semana com espaco para C1/C2/PC/Coord na quinta-feira e em todos os domingos. A Semana 5 fica so com quinta-feira.</p>
       <p>Os dados desta pagina ficam salvos no navegador deste computador.</p>
       <div class="controls">
         <a class="link-button" href="./Sorteio.html">Voltar para o sorteio</a>
@@ -477,13 +477,13 @@
             </article>
 
             <article class="summary-card">
-              <h2>Superv</h2>
-              <div id="superv-summary"></div>
+              <h2>PC Sem Quinta</h2>
+              <div id="pc-zero-quinta-summary"></div>
             </article>
 
             <article class="summary-card">
-              <h2>PC Sem Quinta</h2>
-              <div id="pc-zero-quinta-summary"></div>
+              <h2>Coord</h2>
+              <div id="coord-summary"></div>
             </article>
           </div>
         </section>
@@ -508,17 +508,15 @@
       { key: "domingo2", label: "ZS10" },
       { key: "domingo3", label: "ZS16" },
     ];
-    const BASE_CATEGORIES = ["C1", "C2", "PC"];
-    const EXTRA_DAY_CATEGORIES = {
-      domingo1: ["Superv"],
-    };
-    const CATEGORIES = [...BASE_CATEGORIES, "Superv"];
+    const BASE_CATEGORIES = ["C1", "C2", "PC", "Coord"];
+    const EXTRA_DAY_CATEGORIES = {};
+    const CATEGORIES = [...BASE_CATEGORIES];
     const PEOPLE_CONFIG = window.PEOPLE_CONFIG || {};
     const CATEGORY_KEY_MAP = {
       C1: "c1",
       C2: "c2",
       PC: "pc",
-      Superv: "superv",
+      Coord: "coord",
     };
 
     function getPersonRules(name) {
@@ -670,7 +668,7 @@
         C1: new Map(),
         C2: new Map(),
         PC: new Map(),
-        Superv: new Map(),
+        Coord: new Map(),
       };
 
       Object.entries(payload).forEach(([key, value]) => {
@@ -716,7 +714,7 @@
         ...sourceNames.C1,
         ...sourceNames.C2,
         ...sourceNames.PC,
-        ...sourceNames.Superv,
+        ...sourceNames.Coord,
       ])];
 
       renderSummary("quinta-summary", counts.quinta, allPeople);
@@ -725,7 +723,7 @@
       renderSummary("c1-summary", counts.categories.C1, sourceNames.C1);
       renderSummary("c2-summary", counts.categories.C2, sourceNames.C2);
       renderSummary("pc-summary", counts.categories.PC, sourceNames.PC);
-      renderSummary("superv-summary", counts.categories.Superv, sourceNames.Superv);
+      renderSummary("coord-summary", counts.categories.Coord, sourceNames.Coord);
       renderNameList(
         "pc-zero-quinta-summary",
         sourceNames.PC
@@ -939,10 +937,11 @@
         C1: [],
         C2: [],
         PC: [],
-        Superv: [],
+        Coord: [],
       };
 
       Object.entries(PEOPLE_CONFIG).forEach(([name, config]) => {
+        if (config?.active === false) return;
         const categories = Array.isArray(config?.categories) ? config.categories : [];
         categories.forEach((categoryId) => {
           const categoryLabel = Object.keys(CATEGORY_KEY_MAP).find((label) => CATEGORY_KEY_MAP[label] === categoryId);
