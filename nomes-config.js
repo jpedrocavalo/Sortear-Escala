@@ -23,7 +23,8 @@ window.PEOPLE_CONFIG = {
     }
   },
   "Ellen": {
-    categories: ["c2", "pc"],
+    categories: ["c1", "c2", "pc"],
+    pairedWith: "Victor",
     rules: {
       noConsecutiveWeeks: true,
       maxTotal: null,
@@ -31,7 +32,8 @@ window.PEOPLE_CONFIG = {
     }
   },
   "Victor": {
-    categories: ["c2", "pc"],
+    categories: ["c1", "c2", "pc"],
+    pairedWith: "Ellen",
     rules: {
       noConsecutiveWeeks: true,
       maxTotal: null,
@@ -176,7 +178,7 @@ Object.values(window.PEOPLE_CONFIG).forEach((person) => {
   const onlyC2AndPc =
     JSON.stringify(categories) === JSON.stringify(["c2", "pc"]);
 
-  if (onlyC2AndPc) {
+  if (onlyC2AndPc && !person.excludeCoord) {
     person.categories = [...categories, "coord"];
   }
 });

@@ -890,6 +890,7 @@
       if (sameCategorySet(cats, ["c1", "c2"])) return "c1c2";
       if (sameCategorySet(cats, ["c1", "c2", "pc"])) return "c1c2pc";
       if (sameCategorySet(cats, ["c2", "pc", "coord"])) return "c2pccoord";
+      if (sameCategorySet(cats, ["c2", "pc"])) return "c2pc";
       return "other";
     }
 
@@ -991,9 +992,30 @@
         }
       }
 
+      // Victor + Ellen: par fixo, 2 vezes no ciclo, sempre no mesmo culto (C2+PC ou C2+C1).
+      // Colocados em quintas: garante que nunca caem juntos num domingo (ex.: 26/07).
+      const pairNames = ["Victor", "Ellen"].filter(isActiveName);
+      if (pairNames.length === 2) {
+        const combos = [["c2", "pc"], ["c2", "c1"]];
+        shuffle([0, 1, 2, 3, 4]).slice(0, 2).forEach((weekIndex, i) => {
+          const [catA, catB] = combos[i];
+          const order = shuffle([...pairNames]);
+          place("quinta", catA, weekIndex, order[0]);
+          place("quinta", catB, weekIndex, order[1]);
+        });
+      }
+
+      // Romildo: exatamente 2 quintas, nunca domingo.
+      if (isActiveName("Romildo")) {
+        const freeQuintas = shuffle(
+          [0, 1, 2, 3, 4].filter((weekIndex) => !results.quinta.c1[weekIndex])
+        );
+        freeQuintas.slice(0, 2).forEach((weekIndex) => place("quinta", "c1", weekIndex, "Romildo"));
+      }
+
       // FASE D - preenchimento balanceado do restante.
       const excludedFromGeneral = new Set([
-        "Maria L", "Sofia", "Anna",
+        "Maria L", "Sofia", "Anna", "Romildo", "Victor", "Ellen",
         ...activeNames.filter((name) => classifyPerson(name) === "pureC1"),
       ]);
       const generalPool = activeNames.filter((name) => !excludedFromGeneral.has(name));
@@ -1006,6 +1028,7 @@
         if (group === "c1c2") return cat === "c2";
         if (group === "c1c2pc") return cat === "c1" || cat === "c2" || cat === "pc";
         if (group === "c2pccoord") return cat === "c2" || cat === "pc" || cat === "coord";
+        if (group === "c2pc") return cat === "c2" || cat === "pc";
         return false;
       };
 
