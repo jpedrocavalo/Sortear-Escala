@@ -364,6 +364,7 @@
   <script src="./nomes-config.js"></script>
   <script>
     const BASE_CATEGORY_IDS = ["c1", "c2", "pc", "coord"];
+    const SUNDAY1_CATEGORY_IDS = ["c1", "c2", "pc"]; // ZS07 nao tem Coord
     const CATEGORY_IDS = BASE_CATEGORY_IDS;
     const DAY_RULES = {
       quinta: 5,
@@ -658,7 +659,11 @@
           const categoryLabel = labels[categoryId];
           calendarData[`names:${weekIndex}:quinta:${categoryLabel}`] = "";
           if (weekIndex < 4) {
-            calendarData[`names:${weekIndex}:domingo1:${categoryLabel}`] = "";
+            if (categoryId === "coord") {
+              delete calendarData[`names:${weekIndex}:domingo1:${categoryLabel}`];
+            } else {
+              calendarData[`names:${weekIndex}:domingo1:${categoryLabel}`] = "";
+            }
             calendarData[`names:${weekIndex}:domingo2:${categoryLabel}`] = "";
             calendarData[`names:${weekIndex}:domingo3:${categoryLabel}`] = "";
           } else {
@@ -681,7 +686,7 @@
         (results.domingo[categoryId] || []).forEach((name, index) => {
           const weekIndex = Math.floor(index / 3);
           const sundaySlot = `domingo${(index % 3) + 1}`;
-          if (weekIndex < CALENDAR_WEEK_COUNT) {
+          if (weekIndex < CALENDAR_WEEK_COUNT && !(categoryId === "coord" && sundaySlot === "domingo1")) {
             calendarData[`names:${weekIndex}:${sundaySlot}:${categoryLabel}`] = name;
           }
         });
@@ -807,10 +812,12 @@
 
         if (weekIndex < 4) {
           for (let sundayIndex = 0; sundayIndex < 3; sundayIndex += 1) {
-            BASE_CATEGORY_IDS.forEach((categoryId) => {
+            const dayKey = `domingo${sundayIndex + 1}`;
+            const dayCategories = dayKey === "domingo1" ? SUNDAY1_CATEGORY_IDS : BASE_CATEGORY_IDS;
+            dayCategories.forEach((categoryId) => {
               slots.push({
                 weekIndex,
-                dayKey: `domingo${sundayIndex + 1}`,
+                dayKey,
                 categoryId,
                 target: "domingo",
                 index: (weekIndex * 3) + sundayIndex,
@@ -917,18 +924,20 @@
         globalCounts.set(name, (globalCounts.get(name) || 0) + 1);
       };
 
-      // FASE A - Regra 3: Maria L, Sofia e Anna nas Semanas 2 e 4 (ZS07 + ZS10 do mesmo domingo).
-      // Categorias distintas no ZS07 para as tres caberem no mesmo culto.
+      // FASE A - Regra 3: Maria L, Sofia e Anna nas Semanas 2 e 4 (dois cultos no mesmo domingo).
+      // ZS07 nao tem Coord e o C1 do ZS07 e reservado ao C1-puro, entao a Anna faz o par
+      // dela em ZS10 + ZS16. order: 0=ZS07, 1=ZS10, 2=ZS16.
       const trioPlan = {
-        "Maria L": { zs07: "c2", zs10: "c1" },
-        "Sofia": { zs07: "pc", zs10: "coord" },
-        "Anna": { zs07: "coord", zs10: "pc" },
+        "Maria L": [{ order: 0, cat: "c2" }, { order: 1, cat: "c1" }],
+        "Sofia": [{ order: 0, cat: "pc" }, { order: 1, cat: "coord" }],
+        "Anna": [{ order: 1, cat: "c2" }, { order: 2, cat: "pc" }],
       };
       NO_THURSDAY_ON_WEEKS.forEach((weekIndex) => {
-        Object.entries(trioPlan).forEach(([name, plan]) => {
+        Object.entries(trioPlan).forEach(([name, placements]) => {
           if (!isActiveName(name)) return;
-          place("domingo", plan.zs07, sundaySlot(weekIndex, 0), name);
-          place("domingo", plan.zs10, sundaySlot(weekIndex, 1), name);
+          placements.forEach(({ order, cat }) => {
+            place("domingo", cat, sundaySlot(weekIndex, order), name);
+          });
         });
       });
 

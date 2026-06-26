@@ -418,7 +418,7 @@
   <main class="app">
     <section class="card header">
       <h1>Calendario de escala</h1>
-      <p>Organize os nomes por semana com espaco para C1/C2/PC/Coord na quinta-feira e em todos os domingos. A Semana 5 fica so com quinta-feira.</p>
+      <p>Organize os nomes por semana: C1/C2/PC na quinta e em todos os cultos de domingo, e Coord na quinta, ZS10 e ZS16 (o ZS07 nao tem Coord). A Semana 5 fica so com quinta-feira.</p>
       <p>Os dados desta pagina ficam salvos no navegador deste computador.</p>
       <div class="controls">
         <a class="link-button" href="./Sorteio.html">Voltar para o sorteio</a>
@@ -508,9 +508,13 @@
       { key: "domingo2", label: "ZS10" },
       { key: "domingo3", label: "ZS16" },
     ];
-    const BASE_CATEGORIES = ["C1", "C2", "PC", "Coord"];
-    const EXTRA_DAY_CATEGORIES = {};
-    const CATEGORIES = [...BASE_CATEGORIES];
+    const BASE_CATEGORIES = ["C1", "C2", "PC"];
+    const EXTRA_DAY_CATEGORIES = {
+      quinta: ["Coord"],
+      domingo2: ["Coord"],
+      domingo3: ["Coord"],
+    };
+    const CATEGORIES = [...BASE_CATEGORIES, "Coord"];
     const PEOPLE_CONFIG = window.PEOPLE_CONFIG || {};
     const CATEGORY_KEY_MAP = {
       C1: "c1",
