@@ -1202,23 +1202,26 @@
       });
     }
 
+    function getAllPeopleNames() {
+      return Object.keys(PEOPLE_CONFIG)
+        .filter((name) => PEOPLE_CONFIG[name]?.active !== false)
+        .sort((left, right) => left.localeCompare(right, "pt-BR"));
+    }
+
     function refreshNameOptions(payload = readCalendarPayload()) {
-      const sourceNames = buildSourceNamesByCategory(payload);
+      // Toda lista mostra todo mundo (ativo), pra permitir ajuste manual sem
+      // filtro de categoria ou bloqueio. O sorteio mantem as regras a parte.
+      const allNames = getAllPeopleNames();
 
       document.querySelectorAll('select[data-type="names"]').forEach((field) => {
-        const category = field.dataset.category;
         const currentValue = field.value;
-        const weekIndex = field.dataset.week;
-        const dayKey = field.dataset.day;
-        const availableNames = [...(sourceNames[category] || [])].filter(
-          (name) => !isBlockedForSlot(name, weekIndex, dayKey)
-        );
+        const availableNames = [...allNames];
 
         if (currentValue && !availableNames.includes(currentValue)) {
           availableNames.push(currentValue);
+          availableNames.sort((left, right) => left.localeCompare(right, "pt-BR"));
         }
 
-        availableNames.sort((left, right) => left.localeCompare(right, "pt-BR"));
         field.innerHTML = "";
 
         const emptyOption = document.createElement("option");
